@@ -1,5 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useListProducts, useListCategories } from "@workspace/api-client-react";
 import { ProductCard } from "@/components/ui/product-card";
@@ -7,11 +7,20 @@ import { Search, SlidersHorizontal } from "lucide-react";
 
 export default function Shop() {
   const [location] = useLocation();
-  const searchParams = new URLSearchParams(window.location.search);
   
-  const [category, setCategory] = useState(searchParams.get("category") || "");
-  const [search, setSearch] = useState(searchParams.get("search") || "");
-  const [sortBy, setSortBy] = useState(searchParams.get("sortBy") || "newest");
+  const getParams = () => new URLSearchParams(window.location.search);
+
+  const [category, setCategory] = useState(() => getParams().get("category") || "");
+  const [search, setSearch] = useState(() => getParams().get("search") || "");
+  const [sortBy, setSortBy] = useState(() => getParams().get("sortBy") || "newest");
+
+  // Sync state whenever the URL changes (e.g. navbar search navigates here)
+  useEffect(() => {
+    const p = getParams();
+    setCategory(p.get("category") || "");
+    setSearch(p.get("search") || "");
+    setSortBy(p.get("sortBy") || "newest");
+  }, [location]);
   
   const { data: productsData, isLoading } = useListProducts({ 
     category: category || undefined,
