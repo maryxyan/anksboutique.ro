@@ -3,10 +3,42 @@ import { Link } from "wouter";
 import { useListFeaturedProducts, useListNewArrivals } from "@workspace/api-client-react";
 import { ProductCard } from "@/components/ui/product-card";
 import { motion } from "framer-motion";
+import { useRef, useState, useEffect } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 
 export default function Home() {
   const { data: featuredProducts } = useListFeaturedProducts();
   const { data: newArrivals } = useListNewArrivals();
+
+  const carouselRef = useRef<HTMLDivElement>(null);
+  const [canPrev, setCanPrev] = useState(false);
+  const [canNext, setCanNext] = useState(true);
+
+  const updateButtons = () => {
+    const el = carouselRef.current;
+    if (!el) return;
+    setCanPrev(el.scrollLeft > 8);
+    setCanNext(el.scrollLeft + el.clientWidth < el.scrollWidth - 8);
+  };
+
+  useEffect(() => {
+    const el = carouselRef.current;
+    if (!el) return;
+    updateButtons();
+    el.addEventListener("scroll", updateButtons, { passive: true });
+    window.addEventListener("resize", updateButtons);
+    return () => {
+      el.removeEventListener("scroll", updateButtons);
+      window.removeEventListener("resize", updateButtons);
+    };
+  }, [newArrivals]);
+
+  const scroll = (dir: "prev" | "next") => {
+    const el = carouselRef.current;
+    if (!el) return;
+    const cardWidth = el.querySelector("div")?.offsetWidth ?? 320;
+    el.scrollBy({ left: dir === "next" ? cardWidth + 24 : -(cardWidth + 24), behavior: "smooth" });
+  };
 
   return (
     <Layout>
@@ -105,14 +137,40 @@ export default function Home() {
       {/* New Arrivals Strip */}
       <section className="py-24 bg-background">
         <div className="container mx-auto px-4">
-          <div className="flex justify-between items-end mb-12">
+          <div className="flex justify-between items-center mb-12">
             <h2 className="text-3xl font-serif">New Arrivals</h2>
-            <Link href="/shop?category=new" className="text-sm border-b border-foreground pb-1 uppercase tracking-widest hidden md:block">
-              Shop New
-            </Link>
+            <div className="flex items-center gap-4">
+              <Link href="/shop?category=new" className="text-sm border-b border-foreground pb-1 uppercase tracking-widest hidden md:block mr-4">
+                Shop New
+              </Link>
+              <button
+                onClick={() => scroll("prev")}
+                disabled={!canPrev}
+                aria-label="Previous"
+                className={`w-10 h-10 border flex items-center justify-center transition-colors ${
+                  canPrev ? "border-foreground hover:bg-foreground hover:text-background" : "border-border text-muted-foreground cursor-not-allowed"
+                }`}
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => scroll("next")}
+                disabled={!canNext}
+                aria-label="Next"
+                className={`w-10 h-10 border flex items-center justify-center transition-colors ${
+                  canNext ? "border-foreground hover:bg-foreground hover:text-background" : "border-border text-muted-foreground cursor-not-allowed"
+                }`}
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-          
-          <div className="flex overflow-x-auto snap-x snap-mandatory hide-scrollbar gap-6 pb-8 -mx-4 px-4 md:mx-0 md:px-0">
+
+          <div
+            ref={carouselRef}
+            className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-none"
+            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+          >
             {newArrivals?.map(product => (
               <div key={product.id} className="min-w-[280px] md:min-w-[320px] w-[70vw] md:w-1/4 snap-start shrink-0">
                 <ProductCard product={product} />
