@@ -13,34 +13,38 @@ export default function AdminInventory() {
   return (
     <AdminLayout>
       <div className="mb-8">
-        <h1 className="text-2xl font-serif">Inventory</h1>
+        <h1 className="text-2xl font-serif">Inventar</h1>
         <p className="text-muted-foreground text-sm mt-1">
-          {inventory?.length ?? 0} products — {lowStock.length} low stock
+          {inventory?.length ?? 0} produse — {lowStock.length} stoc scăzut
         </p>
       </div>
 
       {lowStock.length > 0 && (
         <div className="flex items-center gap-3 p-4 bg-amber-50 border border-amber-200 text-amber-800 text-sm mb-6">
           <AlertTriangle className="w-4 h-4 shrink-0" />
-          <span>{lowStock.length} {lowStock.length === 1 ? "product is" : "products are"} running low on stock (5 or fewer units).</span>
+          <span>
+            {lowStock.length === 1
+              ? "1 produs are stoc scăzut (5 unități sau mai puțin)."
+              : `${lowStock.length} produse au stoc scăzut (5 unități sau mai puțin).`}
+          </span>
         </div>
       )}
 
       <div className="border border-border bg-background overflow-hidden">
         {isLoading ? (
-          <div className="p-8 text-center text-muted-foreground text-sm animate-pulse">Loading inventory...</div>
+          <div className="p-8 text-center text-muted-foreground text-sm animate-pulse">Se încarcă inventarul...</div>
         ) : !inventory?.length ? (
-          <div className="p-12 text-center text-muted-foreground text-sm">No products found.</div>
+          <div className="p-12 text-center text-muted-foreground text-sm">Niciun produs găsit.</div>
         ) : (
           <table className="w-full text-sm">
             <thead className="bg-muted border-b border-border">
               <tr>
-                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground w-14">Image</th>
-                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground">Product</th>
-                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground hidden md:table-cell">SKU</th>
-                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground hidden lg:table-cell">Category</th>
-                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground">Price</th>
-                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground">Stock</th>
+                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground w-14">Imagine</th>
+                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground">Produs</th>
+                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground hidden md:table-cell">COD</th>
+                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground hidden lg:table-cell">Categorie</th>
+                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground">Preț</th>
+                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground">Stoc</th>
                 <th className="px-4 py-3 w-12"></th>
               </tr>
             </thead>

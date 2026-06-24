@@ -37,39 +37,39 @@ export default function AdminProducts() {
     <AdminLayout>
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-serif">Products</h1>
-          <p className="text-muted-foreground text-sm mt-1">{data?.total ?? 0} products total</p>
+          <h1 className="text-2xl font-serif">Produse</h1>
+          <p className="text-muted-foreground text-sm mt-1">{data?.total ?? 0} produse total</p>
         </div>
         <Link
           href="/admin/products/new"
           className="flex items-center gap-2 bg-foreground text-background px-5 py-2.5 text-sm uppercase tracking-widest font-medium hover:bg-foreground/80 transition-colors"
         >
           <Plus className="w-4 h-4" />
-          Add Product
+          Adaugă Produs
         </Link>
       </div>
 
       <div className="border border-border bg-background overflow-hidden">
         {isLoading ? (
-          <div className="p-8 text-center text-muted-foreground text-sm animate-pulse">Loading products...</div>
+          <div className="p-8 text-center text-muted-foreground text-sm animate-pulse">Se încarcă produsele...</div>
         ) : !data?.products?.length ? (
           <div className="p-12 text-center">
             <ImageIcon className="w-10 h-10 mx-auto text-border mb-4" strokeWidth={1} />
-            <p className="text-muted-foreground text-sm mb-4">No products yet.</p>
+            <p className="text-muted-foreground text-sm mb-4">Niciun produs încă.</p>
             <Link href="/admin/products/new" className="text-sm border-b border-foreground pb-0.5 uppercase tracking-widest font-medium">
-              Add your first product
+              Adaugă primul produs
             </Link>
           </div>
         ) : (
           <table className="w-full text-sm">
             <thead className="bg-muted border-b border-border">
               <tr>
-                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground w-16">Image</th>
-                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground">Product</th>
-                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground hidden md:table-cell">Category</th>
-                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground">Price</th>
-                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground hidden lg:table-cell">Stock</th>
-                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground">Badge</th>
+                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground w-16">Imagine</th>
+                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground">Produs</th>
+                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground hidden md:table-cell">Categorie</th>
+                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground">Preț</th>
+                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground hidden lg:table-cell">Stoc</th>
+                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground">Etichetă</th>
                 <th className="px-4 py-3 w-24"></th>
               </tr>
             </thead>
@@ -116,10 +116,10 @@ export default function AdminProducts() {
                             onClick={() => handleDelete(product.id)}
                             className="px-2 py-1 text-[10px] bg-destructive text-white uppercase tracking-wider"
                           >
-                            Confirm
+                            Confirmă
                           </button>
                           <button onClick={() => setDeleteConfirm(null)} className="px-2 py-1 text-[10px] border border-border uppercase tracking-wider">
-                            Cancel
+                            Anulează
                           </button>
                         </div>
                       ) : (
@@ -140,11 +140,11 @@ export default function AdminProducts() {
       {data && data.total > 20 && (
         <div className="flex items-center justify-between mt-4 text-sm">
           <button disabled={page === 1} onClick={() => setPage((p) => p - 1)} className="px-4 py-2 border border-border disabled:opacity-40 hover:bg-muted transition-colors">
-            Previous
+            Anterior
           </button>
-          <span className="text-muted-foreground text-xs">Page {page}</span>
+          <span className="text-muted-foreground text-xs">Pagina {page}</span>
           <button disabled={page * 20 >= data.total} onClick={() => setPage((p) => p + 1)} className="px-4 py-2 border border-border disabled:opacity-40 hover:bg-muted transition-colors">
-            Next
+            Următor
           </button>
         </div>
       )}

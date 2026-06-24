@@ -3,10 +3,10 @@ import { Link, useLocation } from "wouter";
 import { LayoutDashboard, Package, ShoppingBag, Archive, LogOut, Menu, X } from "lucide-react";
 
 const NAV = [
-  { href: "/admin", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/products", label: "Products", icon: Package },
-  { href: "/admin/orders", label: "Orders", icon: ShoppingBag },
-  { href: "/admin/inventory", label: "Inventory", icon: Archive },
+  { href: "/admin", label: "Panou de Control", icon: LayoutDashboard },
+  { href: "/admin/products", label: "Produse", icon: Package },
+  { href: "/admin/orders", label: "Comenzi", icon: ShoppingBag },
+  { href: "/admin/inventory", label: "Inventar", icon: Archive },
 ];
 
 export function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -28,7 +28,7 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
       setIsAuth(true);
       setError("");
     } else {
-      setError("Incorrect password.");
+      setError("Parolă incorectă.");
     }
   };
 
@@ -44,17 +44,17 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         <div className="bg-background border border-border p-10 w-full max-w-sm">
           <div className="text-center mb-8">
             <h1 className="text-2xl font-serif">Ank's Boutique</h1>
-            <p className="text-muted-foreground text-sm mt-1">Admin Access</p>
+            <p className="text-muted-foreground text-sm mt-1">Acces Admin</p>
           </div>
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-xs uppercase tracking-widest font-medium text-muted-foreground mb-2">Password</label>
+              <label className="block text-xs uppercase tracking-widest font-medium text-muted-foreground mb-2">Parolă</label>
               <input
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full border border-border bg-background px-4 py-2.5 text-sm focus:border-foreground outline-none transition-colors"
-                placeholder="Enter admin password"
+                placeholder="Introduceți parola admin"
                 autoFocus
               />
               {error && <p className="text-xs text-destructive mt-1">{error}</p>}
@@ -63,12 +63,12 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
               type="submit"
               className="w-full h-11 bg-foreground text-background text-sm uppercase tracking-widest font-medium hover:bg-foreground/80 transition-colors"
             >
-              Sign In
+              Autentificare
             </button>
           </form>
           <div className="text-center mt-6">
             <Link href="/" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
-              Back to Store
+              Înapoi la Magazin
             </Link>
           </div>
         </div>
@@ -102,14 +102,14 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
         </nav>
         <div className="p-4 border-t border-border">
           <Link href="/" className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-            Back to Store
+            Înapoi la Magazin
           </Link>
           <button
             onClick={handleLogout}
             className="flex items-center gap-3 px-3 py-2 text-sm text-muted-foreground hover:text-destructive transition-colors w-full"
           >
             <LogOut className="w-4 h-4" />
-            Sign Out
+            Deconectare
           </button>
         </div>
       </aside>

@@ -11,6 +11,15 @@ import { ChevronDown } from "lucide-react";
 
 const STATUSES = ["", "pending", "confirmed", "shipped", "delivered", "cancelled"];
 
+const STATUS_LABELS_RO: Record<string, string> = {
+  "": "Toate Statusurile",
+  pending: "În Așteptare",
+  confirmed: "Confirmată",
+  shipped: "Expediată",
+  delivered: "Livrată",
+  cancelled: "Anulată",
+};
+
 export default function AdminOrders() {
   const queryClient = useQueryClient();
   const [status, setStatus] = useState("");
@@ -35,8 +44,8 @@ export default function AdminOrders() {
     <AdminLayout>
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-2xl font-serif">Orders</h1>
-          <p className="text-muted-foreground text-sm mt-1">{data?.total ?? 0} orders total</p>
+          <h1 className="text-2xl font-serif">Comenzi</h1>
+          <p className="text-muted-foreground text-sm mt-1">{data?.total ?? 0} comenzi total</p>
         </div>
         <select
           value={status}
@@ -44,23 +53,23 @@ export default function AdminOrders() {
           className="border border-border bg-background px-4 py-2 text-sm focus:border-foreground outline-none"
         >
           {STATUSES.map((s) => (
-            <option key={s} value={s}>{s ? s.charAt(0).toUpperCase() + s.slice(1) : "All Status"}</option>
+            <option key={s} value={s}>{STATUS_LABELS_RO[s]}</option>
           ))}
         </select>
       </div>
 
       <div className="border border-border bg-background overflow-hidden">
         {isLoading ? (
-          <div className="p-8 text-center text-muted-foreground text-sm animate-pulse">Loading orders...</div>
+          <div className="p-8 text-center text-muted-foreground text-sm animate-pulse">Se încarcă comenzile...</div>
         ) : !data?.orders?.length ? (
-          <div className="p-12 text-center text-muted-foreground text-sm">No orders found.</div>
+          <div className="p-12 text-center text-muted-foreground text-sm">Nicio comandă găsită.</div>
         ) : (
           <table className="w-full text-sm">
             <thead className="bg-muted border-b border-border">
               <tr>
-                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground">Order</th>
-                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground">Customer</th>
-                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground hidden md:table-cell">Date</th>
+                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground">Comandă</th>
+                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground">Client</th>
+                <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground hidden md:table-cell">Dată</th>
                 <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground hidden lg:table-cell">Total</th>
                 <th className="text-left px-4 py-3 text-xs uppercase tracking-widest font-medium text-muted-foreground">Status</th>
                 <th className="px-4 py-3"></th>
@@ -91,7 +100,7 @@ export default function AdminOrders() {
                         className="text-[10px] uppercase tracking-wider font-medium border border-border bg-background px-2 py-1 outline-none"
                       >
                         {STATUSES.filter(Boolean).map((s) => (
-                          <option key={s} value={s}>{s}</option>
+                          <option key={s} value={s}>{STATUS_LABELS_RO[s]}</option>
                         ))}
                       </select>
                     </td>
@@ -104,13 +113,13 @@ export default function AdminOrders() {
                       <td colSpan={6} className="px-8 py-6">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                           <div>
-                            <h3 className="text-xs uppercase tracking-widest font-medium text-muted-foreground mb-3">Shipping Details</h3>
+                            <h3 className="text-xs uppercase tracking-widest font-medium text-muted-foreground mb-3">Detalii Livrare</h3>
                             <p className="text-sm">{order.shippingAddress}</p>
                             <p className="text-sm">{order.city}, {order.county} {order.postalCode}</p>
                             <p className="text-sm text-muted-foreground mt-1">{order.customerPhone}</p>
                           </div>
                           <div>
-                            <h3 className="text-xs uppercase tracking-widest font-medium text-muted-foreground mb-3">Order Items</h3>
+                            <h3 className="text-xs uppercase tracking-widest font-medium text-muted-foreground mb-3">Articole Comandă</h3>
                             <div className="space-y-2">
                               {order.items.map((item) => (
                                 <div key={item.id} className="flex items-center justify-between text-sm">
@@ -138,11 +147,11 @@ export default function AdminOrders() {
       {data && data.total > 20 && (
         <div className="flex items-center justify-between mt-4 text-sm">
           <button disabled={page === 1} onClick={() => setPage((p) => p - 1)} className="px-4 py-2 border border-border disabled:opacity-40 hover:bg-muted transition-colors">
-            Previous
+            Anterior
           </button>
-          <span className="text-muted-foreground text-xs">Page {page}</span>
+          <span className="text-muted-foreground text-xs">Pagina {page}</span>
           <button disabled={page * 20 >= data.total} onClick={() => setPage((p) => p + 1)} className="px-4 py-2 border border-border disabled:opacity-40 hover:bg-muted transition-colors">
-            Next
+            Următor
           </button>
         </div>
       )}

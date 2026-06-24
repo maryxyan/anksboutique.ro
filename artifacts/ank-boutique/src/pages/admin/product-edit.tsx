@@ -142,9 +142,9 @@ export default function AdminProductEdit() {
 
   const validate = () => {
     const e: Record<string, string> = {};
-    if (!form.title.trim()) e.title = "Required";
-    if (!form.price || isNaN(Number(form.price))) e.price = "Valid price required";
-    if (!form.categoryId) e.categoryId = "Required";
+    if (!form.title.trim()) e.title = "Câmp obligatoriu";
+    if (!form.price || isNaN(Number(form.price))) e.price = "Preț valid necesar";
+    if (!form.categoryId) e.categoryId = "Câmp obligatoriu";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -199,7 +199,7 @@ export default function AdminProductEdit() {
         <Link href="/admin/products" className="p-2 hover:bg-muted rounded transition-colors">
           <ArrowLeft className="w-4 h-4" />
         </Link>
-        <h1 className="text-2xl font-serif">{isNew ? "Add Product" : "Edit Product"}</h1>
+        <h1 className="text-2xl font-serif">{isNew ? "Adaugă Produs" : "Editează Produs"}</h1>
       </div>
 
       <form onSubmit={handleSubmit}>
@@ -207,30 +207,30 @@ export default function AdminProductEdit() {
           {/* Main Info */}
           <div className="lg:col-span-2 space-y-6">
             <div className="bg-background border border-border p-6 space-y-4">
-              <h2 className="text-xs uppercase tracking-widest font-medium text-muted-foreground mb-4">Product Details</h2>
+              <h2 className="text-xs uppercase tracking-widest font-medium text-muted-foreground mb-4">Detalii Produs</h2>
 
-              <FormField label="Title" error={errors.title}>
+              <FormField label="Titlu" error={errors.title}>
                 <input
                   type="text"
                   value={form.title}
                   onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
                   className={inputCls(!!errors.title)}
-                  placeholder="e.g. Silk Wrap Dress"
+                  placeholder="ex. Rochie din Mătase"
                 />
               </FormField>
 
-              <FormField label="Description">
+              <FormField label="Descriere">
                 <textarea
                   value={form.description}
                   onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
                   rows={4}
                   className="w-full border border-border bg-background px-4 py-2.5 text-sm focus:border-foreground outline-none transition-colors resize-none"
-                  placeholder="Describe the product..."
+                  placeholder="Descrieți produsul..."
                 />
               </FormField>
 
               <div className="grid grid-cols-2 gap-4">
-                <FormField label="Price (RON)" error={errors.price}>
+                <FormField label="Preț (RON)" error={errors.price}>
                   <input
                     type="number"
                     step="0.01"
@@ -240,20 +240,20 @@ export default function AdminProductEdit() {
                     placeholder="299.00"
                   />
                 </FormField>
-                <FormField label="Compare Price (RON)">
+                <FormField label="Preț Comparat (RON)">
                   <input
                     type="number"
                     step="0.01"
                     value={form.comparePrice}
                     onChange={(e) => setForm((f) => ({ ...f, comparePrice: e.target.value }))}
                     className={inputCls(false)}
-                    placeholder="Optional"
+                    placeholder="Opțional"
                   />
                 </FormField>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <FormField label="SKU">
+                <FormField label="COD">
                   <input
                     type="text"
                     value={form.sku}
@@ -262,7 +262,7 @@ export default function AdminProductEdit() {
                     placeholder="ANK-001"
                   />
                 </FormField>
-                <FormField label="Stock Quantity">
+                <FormField label="Cantitate Stoc">
                   <input
                     type="number"
                     value={form.stock}
@@ -276,9 +276,8 @@ export default function AdminProductEdit() {
 
             {/* Images */}
             <div className="bg-background border border-border p-6">
-              <h2 className="text-xs uppercase tracking-widest font-medium text-muted-foreground mb-4">Product Images</h2>
+              <h2 className="text-xs uppercase tracking-widest font-medium text-muted-foreground mb-4">Imagini Produs</h2>
 
-              {/* Drag & Drop Zone */}
               <div
                 ref={dropZoneRef}
                 onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
@@ -291,9 +290,9 @@ export default function AdminProductEdit() {
               >
                 <Upload className="w-8 h-8 mx-auto text-muted-foreground mb-3" strokeWidth={1.5} />
                 <p className="text-sm text-muted-foreground">
-                  {uploading ? "Uploading..." : "Drag & drop images here, or click to browse"}
+                  {uploading ? "Se încarcă..." : "Trage & plasează imagini aici, sau apasă pentru a alege"}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">JPG, PNG, WebP up to 10MB each</p>
+                <p className="text-xs text-muted-foreground mt-1">JPG, PNG, WebP, maxim 10MB fiecare</p>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -304,7 +303,6 @@ export default function AdminProductEdit() {
                 />
               </div>
 
-              {/* Image Previews */}
               {form.images.length > 0 && (
                 <div className="flex flex-wrap gap-3 mt-4">
                   {form.images.map((url, i) => (
@@ -319,7 +317,7 @@ export default function AdminProductEdit() {
                       </button>
                       {i === 0 && (
                         <span className="absolute bottom-0 left-0 right-0 text-center text-[9px] uppercase tracking-wider bg-foreground/80 text-background py-0.5">
-                          Main
+                          Principal
                         </span>
                       )}
                     </div>
@@ -332,36 +330,36 @@ export default function AdminProductEdit() {
           {/* Sidebar */}
           <div className="space-y-4">
             <div className="bg-background border border-border p-6 space-y-4">
-              <h2 className="text-xs uppercase tracking-widest font-medium text-muted-foreground mb-4">Organization</h2>
+              <h2 className="text-xs uppercase tracking-widest font-medium text-muted-foreground mb-4">Organizare</h2>
 
-              <FormField label="Category" error={errors.categoryId}>
+              <FormField label="Categorie" error={errors.categoryId}>
                 <select
                   value={form.categoryId}
                   onChange={(e) => setForm((f) => ({ ...f, categoryId: e.target.value }))}
                   className={inputCls(!!errors.categoryId)}
                 >
-                  <option value="">Select category...</option>
+                  <option value="">Selectează categoria...</option>
                   {categories?.map((cat) => (
                     <option key={cat.id} value={cat.id}>{cat.name}</option>
                   ))}
                 </select>
               </FormField>
 
-              <FormField label="Badge">
+              <FormField label="Etichetă">
                 <select
                   value={form.badge}
                   onChange={(e) => setForm((f) => ({ ...f, badge: e.target.value }))}
                   className={inputCls(false)}
                 >
                   {BADGES.map((b) => (
-                    <option key={b} value={b}>{b || "None"}</option>
+                    <option key={b} value={b}>{b || "Niciunul"}</option>
                   ))}
                 </select>
               </FormField>
             </div>
 
             <div className="bg-background border border-border p-6">
-              <h2 className="text-xs uppercase tracking-widest font-medium text-muted-foreground mb-4">Sizes</h2>
+              <h2 className="text-xs uppercase tracking-widest font-medium text-muted-foreground mb-4">Mărimi</h2>
               <div className="flex flex-wrap gap-2">
                 {SIZES.map((size) => (
                   <button
@@ -381,7 +379,7 @@ export default function AdminProductEdit() {
             </div>
 
             <div className="bg-background border border-border p-6">
-              <h2 className="text-xs uppercase tracking-widest font-medium text-muted-foreground mb-4">Colors</h2>
+              <h2 className="text-xs uppercase tracking-widest font-medium text-muted-foreground mb-4">Culori</h2>
               <div className="flex flex-wrap gap-2">
                 {COLORS.map(({ name, hex }) => {
                   const selected = form.colors.includes(name);
@@ -428,11 +426,11 @@ export default function AdminProductEdit() {
               }`}
             >
               {saved ? (
-                <><Check className="w-4 h-4" /> Saved</>
+                <><Check className="w-4 h-4" /> Salvat</>
               ) : isNew ? (
-                "Create Product"
+                "Creează Produs"
               ) : (
-                "Save Changes"
+                "Salvează Modificările"
               )}
             </button>
           </div>
