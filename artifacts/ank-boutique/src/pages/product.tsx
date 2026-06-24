@@ -26,6 +26,7 @@ export default function Product() {
   const queryClient = useQueryClient();
 
   const [selectedSize, setSelectedSize] = useState<string>("");
+  const [selectedColor, setSelectedColor] = useState<string>("");
   const [currentImage, setCurrentImage] = useState(0);
   const [addedToCart, setAddedToCart] = useState(false);
 
@@ -57,9 +58,10 @@ export default function Product() {
   const handleAddToCart = () => {
     if (!sessionId || !product) return;
     if (product.sizes && product.sizes.length > 0 && !selectedSize) return;
+    if (product.colors && product.colors.length > 0 && !selectedColor) return;
 
     addToCart.mutate(
-      { data: { sessionId, productId, quantity: 1, size: selectedSize || undefined } },
+      { data: { sessionId, productId, quantity: 1, size: selectedSize || undefined, color: selectedColor || undefined } },
       {
         onSuccess: () => {
           queryClient.invalidateQueries({ queryKey: getGetCartQueryKey({ sessionId }) });
@@ -255,6 +257,59 @@ export default function Product() {
                       {size}
                     </button>
                   ))}
+                </div>
+              </div>
+            )}
+
+            {/* Color Selector */}
+            {product.colors && product.colors.length > 0 && (
+              <div>
+                <div className="flex justify-between items-center mb-3">
+                  <h3 className="text-sm font-medium uppercase tracking-widest">Color</h3>
+                  {selectedColor && <span className="text-muted-foreground text-sm">{selectedColor}</span>}
+                </div>
+                <div className="flex flex-wrap gap-2.5">
+                  {product.colors.map((color) => {
+                    const COLOR_MAP: Record<string, string> = {
+                      White: "#FFFFFF", Ivory: "#FFFFF0", Beige: "#F5F0E8", Blush: "#FFB6C1",
+                      Red: "#C0392B", Burgundy: "#800020", Pink: "#E91E8C", Orange: "#E67E22",
+                      Yellow: "#F1C40F", Mint: "#98D8C8", Green: "#27AE60", Teal: "#008080",
+                      Navy: "#1B2A5A", Blue: "#2980B9", Lilac: "#C8A2C8", Purple: "#7D3C98",
+                      Camel: "#C19A6B", Brown: "#6D4C41", Grey: "#95A5A6", Black: "#1A1A1A",
+                    };
+                    const hex = COLOR_MAP[color] ?? "#CCCCCC";
+                    const isLight = ["White", "Ivory", "Beige", "Blush", "Yellow", "Mint"].includes(color);
+                    const isSelected = selectedColor === color;
+                    return (
+                      <button
+                        key={color}
+                        title={color}
+                        onClick={() => setSelectedColor(color)}
+                        className={`relative w-9 h-9 rounded-full border-2 transition-all ${
+                          isSelected
+                            ? "border-foreground scale-110 shadow-md"
+                            : isLight
+                            ? "border-border hover:border-muted-foreground"
+                            : "border-transparent hover:border-muted-foreground"
+                        }`}
+                        style={{ backgroundColor: hex }}
+                      >
+                        {isSelected && (
+                          <svg
+                            viewBox="0 0 12 12"
+                            className={`absolute inset-0 m-auto w-3 h-3 ${isLight ? "text-foreground" : "text-white"}`}
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <polyline points="1.5,6 4.5,9.5 10.5,2.5" />
+                          </svg>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}

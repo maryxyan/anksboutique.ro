@@ -759,6 +759,8 @@ components:
           type: integer
         size:
           type: ["string", "null"]
+        color:
+          type: ["string", "null"]
 
     CartItemInput:
       type: object
@@ -771,6 +773,8 @@ components:
         quantity:
           type: integer
         size:
+          type: string
+        color:
           type: string
 
     CartItemUpdate:

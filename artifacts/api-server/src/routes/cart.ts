@@ -26,6 +26,7 @@ async function buildCart(sessionId: string) {
     price: parseFloat(row.cartItem.price),
     quantity: row.cartItem.quantity,
     size: row.cartItem.size,
+    color: row.cartItem.color,
   }));
 
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
@@ -57,7 +58,7 @@ router.post("/cart/items", async (req, res): Promise<void> => {
     return;
   }
 
-  const { sessionId, productId, quantity, size } = parsed.data;
+  const { sessionId, productId, quantity, size, color } = parsed.data;
 
   const [product] = await db.select().from(productsTable).where(eq(productsTable.id, productId));
   if (!product) {
@@ -65,7 +66,7 @@ router.post("/cart/items", async (req, res): Promise<void> => {
     return;
   }
 
-  // Check if same product+size already in cart
+  // Check if same product+size+color already in cart
   const [existing] = await db
     .select()
     .from(cartItemsTable)
@@ -73,7 +74,8 @@ router.post("/cart/items", async (req, res): Promise<void> => {
       and(
         eq(cartItemsTable.sessionId, sessionId),
         eq(cartItemsTable.productId, productId),
-        size ? eq(cartItemsTable.size, size) : eq(cartItemsTable.size, "")
+        size ? eq(cartItemsTable.size, size) : eq(cartItemsTable.size, ""),
+        color ? eq(cartItemsTable.color, color) : eq(cartItemsTable.color, "")
       )
     );
 
@@ -88,6 +90,7 @@ router.post("/cart/items", async (req, res): Promise<void> => {
       productId,
       quantity,
       size: size ?? null,
+      color: color ?? null,
       price: product.price,
     });
   }

@@ -244,7 +244,8 @@ export const GetCartResponse = zod.object({
   "productImage": zod.string(),
   "price": zod.number(),
   "quantity": zod.number(),
-  "size": zod.string().nullable()
+  "size": zod.string().nullable(),
+  "color": zod.string().nullish()
 })),
   "subtotal": zod.number(),
   "total": zod.number(),
@@ -259,7 +260,8 @@ export const AddToCartBody = zod.object({
   "sessionId": zod.string(),
   "productId": zod.number(),
   "quantity": zod.number(),
-  "size": zod.string().optional()
+  "size": zod.string().optional(),
+  "color": zod.string().optional()
 })
 
 
@@ -283,7 +285,8 @@ export const UpdateCartItemResponse = zod.object({
   "productImage": zod.string(),
   "price": zod.number(),
   "quantity": zod.number(),
-  "size": zod.string().nullable()
+  "size": zod.string().nullable(),
+  "color": zod.string().nullish()
 })),
   "subtotal": zod.number(),
   "total": zod.number(),
@@ -307,7 +310,8 @@ export const RemoveCartItemResponse = zod.object({
   "productImage": zod.string(),
   "price": zod.number(),
   "quantity": zod.number(),
-  "size": zod.string().nullable()
+  "size": zod.string().nullable(),
+  "color": zod.string().nullish()
 })),
   "subtotal": zod.number(),
   "total": zod.number(),

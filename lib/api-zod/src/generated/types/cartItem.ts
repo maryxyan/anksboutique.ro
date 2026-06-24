@@ -15,4 +15,6 @@ export interface CartItem {
   quantity: number;
   /** @nullable */
   size: string | null;
+  /** @nullable */
+  color?: string | null;
 }

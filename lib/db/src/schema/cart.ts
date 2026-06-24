@@ -8,6 +8,7 @@ export const cartItemsTable = pgTable("cart_items", {
   productId: integer("product_id").notNull(),
   quantity: integer("quantity").notNull().default(1),
   size: text("size"),
+  color: text("color"),
   price: numeric("price", { precision: 10, scale: 2 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });

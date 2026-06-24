@@ -11,4 +11,5 @@ export interface CartItemInput {
   productId: number;
   quantity: number;
   size?: string;
+  color?: string;
 }

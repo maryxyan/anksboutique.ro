@@ -106,6 +106,11 @@ export default function Cart() {
                               Size: {item.size}
                             </p>
                           )}
+                          {item.color && (
+                            <p className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 mt-0.5">
+                              Color: {item.color}
+                            </p>
+                          )}
                         </div>
                         <button
                           onClick={() => handleRemove(item.id)}

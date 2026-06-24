@@ -99,6 +99,8 @@ export interface CartItem {
   quantity: number;
   /** @nullable */
   size: string | null;
+  /** @nullable */
+  color?: string | null;
 }
 
 export interface Cart {
@@ -114,6 +116,7 @@ export interface CartItemInput {
   productId: number;
   quantity: number;
   size?: string;
+  color?: string;
 }
 
 export interface CartItemUpdate {
