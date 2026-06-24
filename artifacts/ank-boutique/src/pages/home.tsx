@@ -139,43 +139,45 @@ export default function Home() {
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-12">
             <h2 className="text-3xl font-serif">New Arrivals</h2>
-            <div className="flex items-center gap-4">
-              <Link href="/shop?category=new" className="text-sm border-b border-foreground pb-1 uppercase tracking-widest hidden md:block mr-4">
-                Shop New
-              </Link>
-              <button
-                onClick={() => scroll("prev")}
-                disabled={!canPrev}
-                aria-label="Previous"
-                className={`w-10 h-10 border flex items-center justify-center transition-colors ${
-                  canPrev ? "border-foreground hover:bg-foreground hover:text-background" : "border-border text-muted-foreground cursor-not-allowed"
-                }`}
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => scroll("next")}
-                disabled={!canNext}
-                aria-label="Next"
-                className={`w-10 h-10 border flex items-center justify-center transition-colors ${
-                  canNext ? "border-foreground hover:bg-foreground hover:text-background" : "border-border text-muted-foreground cursor-not-allowed"
-                }`}
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
+            <Link href="/shop?category=new" className="text-sm border-b border-foreground pb-1 uppercase tracking-widest hidden md:block">
+              Shop New
+            </Link>
           </div>
 
-          <div
-            ref={carouselRef}
-            className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-2 -mx-4 px-4 md:mx-0 md:px-0 scrollbar-none"
-            style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
-          >
-            {newArrivals?.map(product => (
-              <div key={product.id} className="min-w-[280px] md:min-w-[320px] w-[70vw] md:w-1/4 snap-start shrink-0">
-                <ProductCard product={product} />
-              </div>
-            ))}
+          <div className="relative">
+            {/* Prev button */}
+            {canPrev && (
+              <button
+                onClick={() => scroll("prev")}
+                aria-label="Previous"
+                className="absolute left-0 top-[40%] -translate-y-1/2 -translate-x-1/2 z-10 w-11 h-11 bg-background/90 backdrop-blur border border-border shadow-md flex items-center justify-center hover:bg-foreground hover:text-background transition-colors"
+              >
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+            )}
+
+            {/* Next button */}
+            {canNext && (
+              <button
+                onClick={() => scroll("next")}
+                aria-label="Next"
+                className="absolute right-0 top-[40%] -translate-y-1/2 translate-x-1/2 z-10 w-11 h-11 bg-background/90 backdrop-blur border border-border shadow-md flex items-center justify-center hover:bg-foreground hover:text-background transition-colors"
+              >
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            )}
+
+            <div
+              ref={carouselRef}
+              className="flex overflow-x-auto snap-x snap-mandatory gap-6 pb-2 scrollbar-none"
+              style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+            >
+              {newArrivals?.map(product => (
+                <div key={product.id} className="min-w-[280px] md:min-w-[320px] w-[70vw] md:w-1/4 snap-start shrink-0">
+                  <ProductCard product={product} />
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
