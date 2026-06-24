@@ -44,7 +44,6 @@ export default function Checkout() {
 
   const [errors, setErrors] = useState<Partial<typeof form>>({});
 
-  // Auto-submit Netopia form
   useEffect(() => {
     if (paymentData && formRef.current) {
       formRef.current.submit();
@@ -53,13 +52,13 @@ export default function Checkout() {
 
   const validate = () => {
     const e: Partial<typeof form> = {};
-    if (!form.customerName.trim()) e.customerName = "Required";
-    if (!form.customerEmail.trim()) e.customerEmail = "Required";
-    if (!form.customerPhone.trim()) e.customerPhone = "Required";
-    if (!form.shippingAddress.trim()) e.shippingAddress = "Required";
-    if (!form.city.trim()) e.city = "Required";
-    if (!form.county) e.county = "Required";
-    if (!form.postalCode.trim()) e.postalCode = "Required";
+    if (!form.customerName.trim()) e.customerName = "Câmp obligatoriu";
+    if (!form.customerEmail.trim()) e.customerEmail = "Câmp obligatoriu";
+    if (!form.customerPhone.trim()) e.customerPhone = "Câmp obligatoriu";
+    if (!form.shippingAddress.trim()) e.shippingAddress = "Câmp obligatoriu";
+    if (!form.city.trim()) e.city = "Câmp obligatoriu";
+    if (!form.county) e.county = "Câmp obligatoriu";
+    if (!form.postalCode.trim()) e.postalCode = "Câmp obligatoriu";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -88,9 +87,9 @@ export default function Checkout() {
       <Layout>
         <div className="container mx-auto px-4 py-24 text-center">
           <ShoppingBag className="w-16 h-16 mx-auto text-border mb-6" strokeWidth={1} />
-          <h2 className="text-xl font-serif mb-3">Your bag is empty</h2>
+          <h2 className="text-xl font-serif mb-3">Geanta ta este goală</h2>
           <Link href="/shop" className="inline-block mt-4 border-b border-foreground pb-1 text-sm uppercase tracking-widest">
-            Continue Shopping
+            Continuă Cumpărăturile
           </Link>
         </div>
       </Layout>
@@ -105,8 +104,8 @@ export default function Checkout() {
             <div className="w-14 h-14 rounded-full bg-muted flex items-center justify-center mx-auto mb-6">
               <Lock className="w-6 h-6" />
             </div>
-            <h2 className="text-2xl font-serif mb-3">Redirecting to secure payment...</h2>
-            <p className="text-muted-foreground text-sm">Please wait while we redirect you to Netopia Payments.</p>
+            <h2 className="text-2xl font-serif mb-3">Redirecționare către plată securizată...</h2>
+            <p className="text-muted-foreground text-sm">Vă rugăm așteptați în timp ce vă redirecționăm către Netopia Payments.</p>
           </motion.div>
           <form ref={formRef} action={paymentData.paymentUrl} method="POST" className="hidden">
             {Object.entries(paymentData.netopiaFormData).map(([k, v]) => (
@@ -121,15 +120,15 @@ export default function Checkout() {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-12 lg:py-20">
-        <h1 className="text-3xl lg:text-4xl font-serif mb-12">Checkout</h1>
+        <h1 className="text-3xl lg:text-4xl font-serif mb-12">Finalizare Comandă</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Form */}
           <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-6">
             <div>
-              <h2 className="text-sm font-medium uppercase tracking-widest mb-6">Contact Information</h2>
+              <h2 className="text-sm font-medium uppercase tracking-widest mb-6">Informații de Contact</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label="Full Name" error={errors.customerName}>
+                <Field label="Nume Complet" error={errors.customerName}>
                   <input
                     type="text"
                     value={form.customerName}
@@ -147,7 +146,7 @@ export default function Checkout() {
                     placeholder="maria@example.com"
                   />
                 </Field>
-                <Field label="Phone" error={errors.customerPhone}>
+                <Field label="Telefon" error={errors.customerPhone}>
                   <input
                     type="tel"
                     value={form.customerPhone}
@@ -160,9 +159,9 @@ export default function Checkout() {
             </div>
 
             <div>
-              <h2 className="text-sm font-medium uppercase tracking-widest mb-6">Shipping Address</h2>
+              <h2 className="text-sm font-medium uppercase tracking-widest mb-6">Adresă de Livrare</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <Field label="Street Address" error={errors.shippingAddress} className="sm:col-span-2">
+                <Field label="Stradă" error={errors.shippingAddress} className="sm:col-span-2">
                   <input
                     type="text"
                     value={form.shippingAddress}
@@ -171,7 +170,7 @@ export default function Checkout() {
                     placeholder="Strada Florilor 12, Ap. 4"
                   />
                 </Field>
-                <Field label="City" error={errors.city}>
+                <Field label="Oraș" error={errors.city}>
                   <input
                     type="text"
                     value={form.city}
@@ -180,17 +179,17 @@ export default function Checkout() {
                     placeholder="București"
                   />
                 </Field>
-                <Field label="County" error={errors.county}>
+                <Field label="Județ" error={errors.county}>
                   <select
                     value={form.county}
                     onChange={(e) => setForm((f) => ({ ...f, county: e.target.value }))}
                     className={inputCls(!!errors.county)}
                   >
-                    <option value="">Select county...</option>
+                    <option value="">Selectează județul...</option>
                     {COUNTIES.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </Field>
-                <Field label="Postal Code" error={errors.postalCode}>
+                <Field label="Cod Poștal" error={errors.postalCode}>
                   <input
                     type="text"
                     value={form.postalCode}
@@ -203,13 +202,13 @@ export default function Checkout() {
             </div>
 
             <div>
-              <Field label="Order Notes (optional)">
+              <Field label="Note Comandă (opțional)">
                 <textarea
                   value={form.notes}
                   onChange={(e) => setForm((f) => ({ ...f, notes: e.target.value }))}
                   rows={3}
                   className="w-full border border-border bg-background px-4 py-2.5 text-sm focus:border-foreground outline-none transition-colors resize-none"
-                  placeholder="Any special instructions..."
+                  placeholder="Instrucțiuni speciale..."
                 />
               </Field>
             </div>
@@ -217,7 +216,7 @@ export default function Checkout() {
             <div className="pt-4">
               <div className="flex items-center gap-2 text-xs text-muted-foreground mb-6">
                 <Lock className="w-3.5 h-3.5" />
-                Secure checkout powered by Netopia Payments. Your data is encrypted and protected.
+                Plată securizată prin Netopia Payments. Datele tale sunt criptate și protejate.
               </div>
               <button
                 type="submit"
@@ -225,11 +224,11 @@ export default function Checkout() {
                 className="w-full h-14 bg-foreground text-background text-sm uppercase tracking-widest font-medium hover:bg-foreground/80 disabled:opacity-40 transition-colors flex items-center justify-center gap-2"
               >
                 {createOrder.isPending ? (
-                  <span>Processing...</span>
+                  <span>Se procesează...</span>
                 ) : (
                   <>
                     <Lock className="w-4 h-4" />
-                    Pay Securely with Card — {cart?.total.toFixed(2)} RON
+                    Plătește Securizat cu Cardul — {cart?.total.toFixed(2)} RON
                   </>
                 )}
               </button>
@@ -239,7 +238,7 @@ export default function Checkout() {
           {/* Order Summary */}
           <div className="lg:col-span-1">
             <div className="bg-muted p-6 sticky top-24">
-              <h2 className="text-sm font-medium uppercase tracking-widest mb-6">Order Summary</h2>
+              <h2 className="text-sm font-medium uppercase tracking-widest mb-6">Sumar Comandă</h2>
               <div className="space-y-4 mb-6">
                 {cart?.items.map((item) => (
                   <div key={item.id} className="flex gap-3">
@@ -250,8 +249,8 @@ export default function Checkout() {
                     />
                     <div className="flex-1">
                       <p className="text-sm font-medium leading-snug">{item.productTitle}</p>
-                      {item.size && <p className="text-xs text-muted-foreground mt-0.5">Size: {item.size}</p>}
-                      <p className="text-xs text-muted-foreground mt-0.5">Qty: {item.quantity}</p>
+                      {item.size && <p className="text-xs text-muted-foreground mt-0.5">Mărime: {item.size}</p>}
+                      <p className="text-xs text-muted-foreground mt-0.5">Cant.: {item.quantity}</p>
                       <p className="text-sm mt-1">{(item.price * item.quantity).toFixed(2)} RON</p>
                     </div>
                   </div>

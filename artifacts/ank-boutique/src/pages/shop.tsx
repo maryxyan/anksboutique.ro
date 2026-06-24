@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useListProducts, useListCategories } from "@workspace/api-client-react";
 import { ProductCard } from "@/components/ui/product-card";
-import { Search, SlidersHorizontal } from "lucide-react";
+import { Search } from "lucide-react";
 
 export default function Shop() {
   const [location] = useLocation();
@@ -14,7 +14,6 @@ export default function Shop() {
   const [search, setSearch] = useState(() => getParams().get("search") || "");
   const [sortBy, setSortBy] = useState(() => getParams().get("sortBy") || "newest");
 
-  // Sync state whenever the URL changes (e.g. navbar search navigates here)
   useEffect(() => {
     const p = getParams();
     setCategory(p.get("category") || "");
@@ -34,8 +33,8 @@ export default function Shop() {
     <Layout>
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-serif mb-4">Collection</h1>
-          <p className="text-muted-foreground text-sm">Discover our curated selection of premium pieces.</p>
+          <h1 className="text-4xl font-serif mb-4">Colecție</h1>
+          <p className="text-muted-foreground text-sm">Descoperă selecția noastră rafinată de piese premium.</p>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
@@ -46,20 +45,20 @@ export default function Shop() {
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <input 
                   type="text" 
-                  placeholder="Search products..." 
+                  placeholder="Caută produse..." 
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   className="w-full bg-background border border-border pl-10 pr-4 py-2 text-sm focus:border-foreground outline-none transition-colors"
                 />
               </div>
 
-              <h3 className="font-medium mb-4 text-sm uppercase tracking-widest">Categories</h3>
+              <h3 className="font-medium mb-4 text-sm uppercase tracking-widest">Categorii</h3>
               <div className="space-y-2">
                 <button 
                   onClick={() => setCategory("")}
                   className={`block text-sm transition-colors ${!category ? 'text-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}
                 >
-                  All Products
+                  Toate Produsele
                 </button>
                 {categories?.map(cat => (
                   <button 
@@ -74,15 +73,15 @@ export default function Shop() {
             </div>
 
             <div>
-              <h3 className="font-medium mb-4 text-sm uppercase tracking-widest">Sort By</h3>
+              <h3 className="font-medium mb-4 text-sm uppercase tracking-widest">Sortează</h3>
               <select 
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
                 className="w-full bg-background border border-border px-4 py-2 text-sm focus:border-foreground outline-none transition-colors appearance-none"
               >
-                <option value="newest">Newest Arrivals</option>
-                <option value="price_asc">Price: Low to High</option>
-                <option value="price_desc">Price: High to Low</option>
+                <option value="newest">Cele mai noi</option>
+                <option value="price_asc">Preț: Crescător</option>
+                <option value="price_desc">Preț: Descrescător</option>
               </select>
             </div>
           </aside>
@@ -101,12 +100,12 @@ export default function Shop() {
               </div>
             ) : productsData?.products?.length === 0 ? (
               <div className="text-center py-24">
-                <p className="text-muted-foreground">No products found matching your criteria.</p>
+                <p className="text-muted-foreground">Nu s-au găsit produse pentru criteriile selectate.</p>
                 <button 
                   onClick={() => { setCategory(""); setSearch(""); }}
                   className="mt-4 border-b border-foreground pb-1 text-sm uppercase tracking-widest font-medium"
                 >
-                  Clear Filters
+                  Resetează Filtrele
                 </button>
               </div>
             ) : (

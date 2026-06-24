@@ -30,7 +30,6 @@ export default function Product() {
   const [currentImage, setCurrentImage] = useState(0);
   const [addedToCart, setAddedToCart] = useState(false);
 
-  // Review form state
   const [reviewName, setReviewName] = useState("");
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
@@ -126,9 +125,9 @@ export default function Product() {
     return (
       <Layout>
         <div className="container mx-auto px-4 py-24 text-center">
-          <p className="text-muted-foreground mb-4">Product not found.</p>
+          <p className="text-muted-foreground mb-4">Produsul nu a fost găsit.</p>
           <Link href="/shop" className="border-b border-foreground pb-1 text-sm uppercase tracking-widest">
-            Back to Shop
+            Înapoi la Magazin
           </Link>
         </div>
       </Layout>
@@ -140,7 +139,7 @@ export default function Product() {
       <div className="container mx-auto px-4 py-8 lg:py-16">
         <Link href="/shop" className="inline-flex items-center text-muted-foreground text-sm mb-8 hover:text-foreground transition-colors">
           <ChevronLeft className="w-4 h-4 mr-1" />
-          Back to Shop
+          Înapoi la Magazin
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
@@ -227,7 +226,7 @@ export default function Product() {
                       <Star key={s} className={`w-3.5 h-3.5 ${s <= Math.round(product.rating || 0) ? "fill-foreground text-foreground" : "text-border"}`} />
                     ))}
                   </div>
-                  <span>({product.reviewCount} reviews)</span>
+                  <span>({product.reviewCount} {product.reviewCount === 1 ? "recenzie" : "recenzii"})</span>
                 </div>
               )}
             </div>
@@ -240,7 +239,7 @@ export default function Product() {
             {product.sizes && product.sizes.length > 0 && (
               <div>
                 <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-sm font-medium uppercase tracking-widest">Size</h3>
+                  <h3 className="text-sm font-medium uppercase tracking-widest">Mărime</h3>
                   {selectedSize && <span className="text-muted-foreground text-sm">{selectedSize}</span>}
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -265,7 +264,7 @@ export default function Product() {
             {product.colors && product.colors.length > 0 && (
               <div>
                 <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-sm font-medium uppercase tracking-widest">Color</h3>
+                  <h3 className="text-sm font-medium uppercase tracking-widest">Culoare</h3>
                   {selectedColor && <span className="text-muted-foreground text-sm">{selectedColor}</span>}
                 </div>
                 <div className="flex flex-wrap gap-2.5">
@@ -316,9 +315,9 @@ export default function Product() {
 
             {/* Stock */}
             {product.inStock ? (
-              <p className="text-sm text-green-700">In Stock — {product.stock} available</p>
+              <p className="text-sm text-green-700">În Stoc — {product.stock} disponibile</p>
             ) : (
-              <p className="text-sm text-destructive">Out of Stock</p>
+              <p className="text-sm text-destructive">Stoc Epuizat</p>
             )}
 
             {/* Actions */}
@@ -336,11 +335,11 @@ export default function Product() {
                 <AnimatePresence mode="wait">
                   {addedToCart ? (
                     <motion.span key="added" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
-                      <Check className="w-4 h-4" /> Added to Bag
+                      <Check className="w-4 h-4" /> Adăugat în Geantă
                     </motion.span>
                   ) : (
                     <motion.span key="add" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
-                      <ShoppingBag className="w-4 h-4" /> Add to Bag
+                      <ShoppingBag className="w-4 h-4" /> Adaugă în Geantă
                     </motion.span>
                   )}
                 </AnimatePresence>
@@ -353,19 +352,19 @@ export default function Product() {
                 }`}
               >
                 <Heart className={`w-4 h-4 ${isWishlisted ? "fill-foreground" : ""}`} />
-                {isWishlisted ? "Saved to Wishlist" : "Add to Wishlist"}
+                {isWishlisted ? "Salvat în Listă" : "Adaugă în Listă"}
               </button>
             </div>
 
             {product.sku && (
-              <p className="text-xs text-muted-foreground">SKU: {product.sku}</p>
+              <p className="text-xs text-muted-foreground">COD: {product.sku}</p>
             )}
           </div>
         </div>
 
         {/* Reviews Section */}
         <div className="mt-24 border-t border-border/40 pt-16">
-          <h2 className="text-2xl font-serif mb-10">Customer Reviews</h2>
+          <h2 className="text-2xl font-serif mb-10">Recenzii Clienți</h2>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
             {/* Existing Reviews */}
@@ -383,27 +382,27 @@ export default function Product() {
                     </div>
                     {review.comment && <p className="text-sm text-muted-foreground leading-relaxed">{review.comment}</p>}
                     <p className="text-xs text-muted-foreground mt-2">
-                      {new Date(review.createdAt).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}
+                      {new Date(review.createdAt).toLocaleDateString("ro-RO", { day: "numeric", month: "long", year: "numeric" })}
                     </p>
                   </div>
                 ))
               ) : (
-                <p className="text-muted-foreground text-sm">No reviews yet. Be the first to share your thoughts.</p>
+                <p className="text-muted-foreground text-sm">Nicio recenzie încă. Fii primul care împărtășește părerea ta.</p>
               )}
             </div>
 
             {/* Review Form */}
             <div>
-              <h3 className="text-lg font-medium mb-6">Write a Review</h3>
+              <h3 className="text-lg font-medium mb-6">Scrie o Recenzie</h3>
               {reviewSubmitted ? (
                 <div className="p-6 bg-muted text-center">
                   <Check className="w-6 h-6 mx-auto mb-2 text-green-700" />
-                  <p className="text-sm">Thank you for your review!</p>
+                  <p className="text-sm">Îți mulțumim pentru recenzie!</p>
                 </div>
               ) : (
                 <form onSubmit={handleReviewSubmit} className="space-y-4">
                   <div>
-                    <label className="block text-xs uppercase tracking-widest font-medium mb-2">Your Name</label>
+                    <label className="block text-xs uppercase tracking-widest font-medium mb-2">Numele Tău</label>
                     <input
                       type="text"
                       value={reviewName}
@@ -414,7 +413,7 @@ export default function Product() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs uppercase tracking-widest font-medium mb-2">Rating</label>
+                    <label className="block text-xs uppercase tracking-widest font-medium mb-2">Evaluare</label>
                     <div className="flex gap-1">
                       {[1, 2, 3, 4, 5].map((s) => (
                         <button key={s} type="button" onClick={() => setReviewRating(s)}>
@@ -424,13 +423,13 @@ export default function Product() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs uppercase tracking-widest font-medium mb-2">Your Review</label>
+                    <label className="block text-xs uppercase tracking-widest font-medium mb-2">Recenzia Ta</label>
                     <textarea
                       value={reviewComment}
                       onChange={(e) => setReviewComment(e.target.value)}
                       rows={4}
                       className="w-full border border-border bg-background px-4 py-2.5 text-sm focus:border-foreground outline-none transition-colors resize-none"
-                      placeholder="How did you find this piece?"
+                      placeholder="Ce părere ai despre acest articol?"
                     />
                   </div>
                   <button
@@ -438,7 +437,7 @@ export default function Product() {
                     disabled={createReview.isPending}
                     className="w-full h-12 bg-foreground text-background text-sm uppercase tracking-widest font-medium hover:bg-foreground/80 disabled:opacity-40 transition-colors"
                   >
-                    Submit Review
+                    Trimite Recenzia
                   </button>
                 </form>
               )}

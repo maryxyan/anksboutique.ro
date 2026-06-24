@@ -66,7 +66,7 @@ export function ProductCard({ product }: { product: Product }) {
         {!product.inStock && (
           <div className="absolute inset-0 bg-background/40 backdrop-blur-[2px] flex items-center justify-center z-10">
             <span className="bg-background text-foreground text-xs uppercase tracking-widest px-4 py-2">
-              Out of Stock
+              Stoc Epuizat
             </span>
           </div>
         )}

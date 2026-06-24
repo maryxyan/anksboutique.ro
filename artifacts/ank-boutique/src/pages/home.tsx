@@ -47,7 +47,7 @@ export default function Home() {
         <div className="absolute inset-0 z-0">
           <img 
             src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2000&auto=format&fit=crop" 
-            alt="Ank's Boutique Hero" 
+            alt="Ank's Boutique" 
             className="w-full h-full object-cover object-center opacity-80"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent mix-blend-multiply" />
@@ -60,16 +60,16 @@ export default function Home() {
             transition={{ duration: 0.8, ease: "easeOut" }}
           >
             <h1 className="text-5xl md:text-7xl font-serif text-white mb-6 tracking-wide drop-shadow-sm">
-              Effortless Elegance.
+              Eleganță fără efort.
             </h1>
             <p className="text-lg md:text-xl text-white/90 font-light mb-10 max-w-xl mx-auto">
-              Curated luxury for the modern woman. Discover the new collection.
+              Lux rafinat pentru femeia modernă. Descoperă noua colecție.
             </p>
             <Link 
               href="/shop" 
               className="inline-block bg-white text-black px-10 py-4 text-sm tracking-widest uppercase font-medium hover:bg-white/90 transition-colors"
             >
-              Shop Collection
+              Descoperă Colecția
             </Link>
           </motion.div>
         </div>
@@ -79,11 +79,11 @@ export default function Home() {
       <section className="py-12 border-b border-border/40">
         <div className="container mx-auto px-4">
           <div className="flex flex-wrap justify-center gap-8 md:gap-16 text-sm uppercase tracking-widest text-muted-foreground">
-            <Link href="/shop?category=dresses" className="hover:text-foreground transition-colors">Dresses</Link>
-            <Link href="/shop?category=blouses" className="hover:text-foreground transition-colors">Blouses</Link>
-            <Link href="/shop?category=outerwear" className="hover:text-foreground transition-colors">Outerwear</Link>
-            <Link href="/shop?category=accessories" className="hover:text-foreground transition-colors">Accessories</Link>
-            <Link href="/shop?category=bags" className="hover:text-foreground transition-colors">Bags</Link>
+            <Link href="/shop?category=dresses" className="hover:text-foreground transition-colors">Rochii</Link>
+            <Link href="/shop?category=blouses" className="hover:text-foreground transition-colors">Bluze</Link>
+            <Link href="/shop?category=outerwear" className="hover:text-foreground transition-colors">Jachete</Link>
+            <Link href="/shop?category=accessories" className="hover:text-foreground transition-colors">Accesorii</Link>
+            <Link href="/shop?category=bags" className="hover:text-foreground transition-colors">Genți</Link>
           </div>
         </div>
       </section>
@@ -91,9 +91,9 @@ export default function Home() {
       {/* Featured Products */}
       <section className="py-24 container mx-auto px-4">
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-serif mb-4">Curated Selection</h2>
+          <h2 className="text-3xl md:text-4xl font-serif mb-4">Selecție Rafinată</h2>
           <p className="text-muted-foreground text-sm max-w-md mx-auto">
-            Pieces that transcend seasons. Meticulously crafted for your everyday wardrobe.
+            Piese care transcend anotimpurile. Realizate cu grijă pentru garderoba ta de zi cu zi.
           </p>
         </div>
         
@@ -105,7 +105,7 @@ export default function Home() {
         
         <div className="text-center mt-16">
           <Link href="/shop" className="inline-block border border-foreground text-foreground px-8 py-3 text-sm tracking-widest uppercase font-medium hover:bg-foreground hover:text-background transition-colors">
-            View All
+            Vezi Toate
           </Link>
         </div>
       </section>
@@ -122,13 +122,13 @@ export default function Home() {
         <div className="w-full md:w-1/2 flex items-center justify-center p-12 md:p-24 text-center md:text-left">
           <div className="max-w-md">
             <h2 className="text-3xl md:text-5xl font-serif mb-6 leading-tight text-[#111111]">
-              Quiet confidence, not loud excess.
+              Încredere discretă, nu exces strident.
             </h2>
             <p className="text-muted-foreground leading-relaxed mb-8">
-              We believe in the power of an impeccable fit and pristine materials. Every piece in our collection is selected to make you feel both grounded and aspirational.
+              Credem în puterea unui croiaj impecabil și a materialelor de calitate. Fiecare piesă din colecția noastră este aleasă să te facă să te simți ancorată și aspirațională în același timp.
             </p>
             <Link href="/about" className="text-sm border-b border-foreground pb-1 uppercase tracking-widest font-medium hover:text-muted-foreground transition-colors">
-              Our Story
+              Povestea Noastră
             </Link>
           </div>
         </div>
@@ -138,29 +138,27 @@ export default function Home() {
       <section className="py-24 bg-background">
         <div className="container mx-auto px-4">
           <div className="flex justify-between items-center mb-12">
-            <h2 className="text-3xl font-serif">New Arrivals</h2>
+            <h2 className="text-3xl font-serif">Noutăți</h2>
             <Link href="/shop?category=new" className="text-sm border-b border-foreground pb-1 uppercase tracking-widest hidden md:block">
-              Shop New
+              Cumpără Noutăți
             </Link>
           </div>
 
           <div className="relative">
-            {/* Prev button */}
             {canPrev && (
               <button
                 onClick={() => scroll("prev")}
-                aria-label="Previous"
+                aria-label="Anterior"
                 className="absolute left-0 top-[40%] -translate-y-1/2 -translate-x-1/2 z-10 w-10 h-10 rounded-full bg-background/50 backdrop-blur-sm border border-border/40 shadow-sm flex items-center justify-center hover:bg-background/80 transition-all opacity-70 hover:opacity-100"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
             )}
 
-            {/* Next button */}
             {canNext && (
               <button
                 onClick={() => scroll("next")}
-                aria-label="Next"
+                aria-label="Următor"
                 className="absolute right-0 top-[40%] -translate-y-1/2 translate-x-1/2 z-10 w-10 h-10 rounded-full bg-background/50 backdrop-blur-sm border border-border/40 shadow-sm flex items-center justify-center hover:bg-background/80 transition-all opacity-70 hover:opacity-100"
               >
                 <ChevronRight className="w-5 h-5" />
@@ -185,19 +183,19 @@ export default function Home() {
       {/* Newsletter */}
       <section className="py-32 bg-muted text-center px-4">
         <div className="max-w-xl mx-auto">
-          <h2 className="text-3xl font-serif mb-4">The Insider List</h2>
+          <h2 className="text-3xl font-serif mb-4">Lista Insider</h2>
           <p className="text-muted-foreground mb-8">
-            Subscribe for early access to new collections, exclusive events, and private sales.
+            Abonează-te pentru acces anticipat la colecții noi, evenimente exclusive și vânzări private.
           </p>
           <form className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto" onSubmit={(e) => e.preventDefault()}>
             <input 
               type="email" 
-              placeholder="Your email address" 
+              placeholder="Adresa ta de email" 
               className="flex-1 bg-background border-none px-6 py-3 text-sm focus:ring-1 focus:ring-foreground outline-none"
               required
             />
             <button type="submit" className="bg-foreground text-background px-8 py-3 text-sm uppercase tracking-widest font-medium">
-              Subscribe
+              Abonează-te
             </button>
           </form>
         </div>

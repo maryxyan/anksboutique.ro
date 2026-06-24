@@ -39,9 +39,9 @@ export default function Wishlist() {
     <Layout>
       <div className="container mx-auto px-4 py-12 lg:py-20">
         <div className="flex items-end justify-between mb-12">
-          <h1 className="text-3xl lg:text-4xl font-serif">Wishlist</h1>
+          <h1 className="text-3xl lg:text-4xl font-serif">Listă de Dorințe</h1>
           {!isEmpty && (
-            <p className="text-muted-foreground text-sm">{wishlist.length} {wishlist.length === 1 ? "item" : "items"}</p>
+            <p className="text-muted-foreground text-sm">{wishlist.length} {wishlist.length === 1 ? "articol" : "articole"}</p>
           )}
         </div>
 
@@ -59,15 +59,15 @@ export default function Wishlist() {
           <div className="text-center py-24">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
               <Heart className="w-16 h-16 mx-auto text-border mb-6" strokeWidth={1} />
-              <h2 className="text-xl font-serif mb-3">Your wishlist is empty</h2>
+              <h2 className="text-xl font-serif mb-3">Lista ta de dorințe este goală</h2>
               <p className="text-muted-foreground text-sm mb-8 max-w-xs mx-auto">
-                Save pieces you love to come back to them later.
+                Salvează piesele care îți plac pentru a le regăsi mai târziu.
               </p>
               <Link
                 href="/shop"
                 className="inline-block bg-foreground text-background px-10 py-3.5 text-sm uppercase tracking-widest font-medium hover:bg-foreground/80 transition-colors"
               >
-                Explore Collection
+                Explorează Colecția
               </Link>
             </motion.div>
           </div>

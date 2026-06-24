@@ -44,20 +44,19 @@ export function Navbar() {
     if (e.key === "Escape") closeSearch();
   };
 
-  // Close everything when navigating
   useEffect(() => {
     closeSearch();
     setMenuOpen(false);
   }, [location]);
 
   const navLinks = [
-    { href: "/shop", label: "Shop" },
-    { href: "/shop?category=new", label: "New Arrivals" },
-    { href: "/shop?category=dresses", label: "Dresses" },
-    { href: "/shop?category=blouses", label: "Blouses" },
-    { href: "/shop?category=outerwear", label: "Outerwear" },
-    { href: "/shop?category=accessories", label: "Accessories" },
-    { href: "/shop?category=bags", label: "Bags" },
+    { href: "/shop", label: "Magazin" },
+    { href: "/shop?category=new", label: "Noutăți" },
+    { href: "/shop?category=dresses", label: "Rochii" },
+    { href: "/shop?category=blouses", label: "Bluze" },
+    { href: "/shop?category=outerwear", label: "Jachete" },
+    { href: "/shop?category=accessories", label: "Accesorii" },
+    { href: "/shop?category=bags", label: "Genți" },
     { href: "/contact", label: "Contact" },
   ];
 
@@ -69,7 +68,7 @@ export function Navbar() {
         <div className="flex items-center gap-1 lg:hidden">
           <button
             className="p-2 -ml-2"
-            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            aria-label={menuOpen ? "Închide meniul" : "Deschide meniul"}
             onClick={() => { setMenuOpen((o) => !o); closeSearch(); }}
           >
             <AnimatePresence mode="wait" initial={false}>
@@ -86,7 +85,7 @@ export function Navbar() {
           </button>
           <button
             className="p-2"
-            aria-label="Search"
+            aria-label="Caută"
             onClick={searchOpen ? handleSearch : openSearch}
           >
             <Search className="w-5 h-5" />
@@ -95,8 +94,8 @@ export function Navbar() {
 
         {/* Left — desktop nav */}
         <div className="hidden lg:flex items-center gap-8 text-sm font-medium">
-          <Link href="/shop" className="hover:text-primary/70 transition-colors">Shop</Link>
-          <Link href="/shop?category=new" className="hover:text-primary/70 transition-colors">New Arrivals</Link>
+          <Link href="/shop" className="hover:text-primary/70 transition-colors">Magazin</Link>
+          <Link href="/shop?category=new" className="hover:text-primary/70 transition-colors">Noutăți</Link>
           <Link href="/contact" className="hover:text-primary/70 transition-colors">Contact</Link>
         </div>
 
@@ -129,7 +128,7 @@ export function Navbar() {
                         value={query}
                         onChange={(e) => setQuery(e.target.value)}
                         onKeyDown={handleKeyDown}
-                        placeholder="Search products…"
+                        placeholder="Caută produse…"
                         className="w-full bg-transparent text-sm outline-none py-1 placeholder:text-muted-foreground"
                       />
                       {query && (
@@ -143,7 +142,7 @@ export function Navbar() {
               </AnimatePresence>
               <button
                 className="p-2 hover:text-primary/70 transition-colors"
-                aria-label={searchOpen ? "Submit search" : "Open search"}
+                aria-label={searchOpen ? "Caută" : "Deschide căutarea"}
                 onClick={searchOpen ? handleSearch : openSearch}
                 onMouseEnter={!searchOpen ? openSearch : undefined}
               >
@@ -198,10 +197,9 @@ export function Navbar() {
                 </motion.div>
               ))}
 
-              {/* Bottom utility links */}
               <div className="flex items-center gap-6 mt-6 pt-2">
                 <Link href="/wishlist" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  <Heart className="w-4 h-4" /> Wishlist
+                  <Heart className="w-4 h-4" /> Favorite
                 </Link>
                 <Link href="/admin" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
                   <User className="w-4 h-4" /> Admin
@@ -229,7 +227,7 @@ export function Navbar() {
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Search products…"
+                placeholder="Caută produse…"
                 autoFocus
                 className="flex-1 bg-transparent text-sm outline-none border-b border-foreground py-1 placeholder:text-muted-foreground"
               />

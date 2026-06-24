@@ -43,7 +43,7 @@ export default function Cart() {
   return (
     <Layout>
       <div className="container mx-auto px-4 py-12 lg:py-20">
-        <h1 className="text-3xl lg:text-4xl font-serif mb-12">Your Bag</h1>
+        <h1 className="text-3xl lg:text-4xl font-serif mb-12">Geanta Ta</h1>
 
         {isLoading ? (
           <div className="space-y-4 animate-pulse">
@@ -61,15 +61,15 @@ export default function Cart() {
           <div className="text-center py-24">
             <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
               <ShoppingBag className="w-16 h-16 mx-auto text-border mb-6" strokeWidth={1} />
-              <h2 className="text-xl font-serif mb-3">Your bag is empty</h2>
+              <h2 className="text-xl font-serif mb-3">Geanta ta este goală</h2>
               <p className="text-muted-foreground text-sm mb-8 max-w-xs mx-auto">
-                You have not added anything yet. Explore the collection to find something you love.
+                Nu ai adăugat nimic încă. Explorează colecția pentru a găsi ceva care îți place.
               </p>
               <Link
                 href="/shop"
                 className="inline-block bg-foreground text-background px-10 py-3.5 text-sm uppercase tracking-widest font-medium hover:bg-foreground/80 transition-colors"
               >
-                Shop Collection
+                Descoperă Colecția
               </Link>
             </motion.div>
           </div>
@@ -103,12 +103,12 @@ export default function Cart() {
                           <h3 className="font-medium text-sm mb-1">{item.productTitle}</h3>
                           {item.size && (
                             <p className="text-xs text-muted-foreground uppercase tracking-wider">
-                              Size: {item.size}
+                              Mărime: {item.size}
                             </p>
                           )}
                           {item.color && (
                             <p className="text-xs text-muted-foreground uppercase tracking-wider flex items-center gap-1.5 mt-0.5">
-                              Color: {item.color}
+                              Culoare: {item.color}
                             </p>
                           )}
                         </div>
@@ -149,15 +149,15 @@ export default function Cart() {
             {/* Summary */}
             <div className="lg:col-span-1">
               <div className="bg-muted p-8 sticky top-24">
-                <h2 className="text-lg font-medium mb-6">Order Summary</h2>
+                <h2 className="text-lg font-medium mb-6">Sumar Comandă</h2>
                 <div className="space-y-3 text-sm mb-6">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Subtotal ({cart.itemCount} items)</span>
+                    <span className="text-muted-foreground">Subtotal ({cart.itemCount} {cart.itemCount === 1 ? "produs" : "produse"})</span>
                     <span>{cart.subtotal.toFixed(2)} RON</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Shipping</span>
-                    <span>Calculated at checkout</span>
+                    <span className="text-muted-foreground">Livrare</span>
+                    <span>Calculat la finalizare</span>
                   </div>
                 </div>
                 <div className="border-t border-border pt-4 mb-8">
@@ -170,13 +170,13 @@ export default function Cart() {
                   href="/checkout"
                   className="block w-full text-center bg-foreground text-background py-4 text-sm uppercase tracking-widest font-medium hover:bg-foreground/80 transition-colors"
                 >
-                  Proceed to Checkout
+                  Finalizează Comanda
                 </Link>
                 <Link
                   href="/shop"
                   className="block w-full text-center text-muted-foreground mt-4 text-sm hover:text-foreground transition-colors"
                 >
-                  Continue Shopping
+                  Continuă Cumpărăturile
                 </Link>
               </div>
             </div>
