@@ -10,6 +10,7 @@ export function Navbar() {
   const [location, navigate] = useLocation();
   const sessionId = useSessionId();
   const [searchOpen, setSearchOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -21,6 +22,7 @@ export function Navbar() {
   const itemCount = cart?.itemCount || 0;
 
   const openSearch = useCallback(() => {
+    setMenuOpen(false);
     setSearchOpen(true);
     setTimeout(() => inputRef.current?.focus(), 50);
   }, []);
@@ -32,10 +34,7 @@ export function Navbar() {
 
   const handleSearch = useCallback(() => {
     const q = query.trim();
-    if (!q) {
-      closeSearch();
-      return;
-    }
+    if (!q) { closeSearch(); return; }
     navigate(`/shop?search=${encodeURIComponent(q)}`);
     closeSearch();
   }, [query, navigate, closeSearch]);
@@ -45,18 +44,45 @@ export function Navbar() {
     if (e.key === "Escape") closeSearch();
   };
 
-  // Close search when navigating away
+  // Close everything when navigating
   useEffect(() => {
     closeSearch();
+    setMenuOpen(false);
   }, [location]);
+
+  const navLinks = [
+    { href: "/shop", label: "Shop" },
+    { href: "/shop?category=new", label: "New Arrivals" },
+    { href: "/shop?category=dresses", label: "Dresses" },
+    { href: "/shop?category=blouses", label: "Blouses" },
+    { href: "/shop?category=outerwear", label: "Outerwear" },
+    { href: "/shop?category=accessories", label: "Accessories" },
+    { href: "/shop?category=bags", label: "Bags" },
+    { href: "/contact", label: "Contact" },
+  ];
 
   return (
     <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b border-border/40">
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+
         {/* Left — mobile */}
-        <div className="flex items-center gap-4 lg:hidden">
-          <button className="p-2 -ml-2" aria-label="Menu">
-            <Menu className="w-5 h-5" />
+        <div className="flex items-center gap-1 lg:hidden">
+          <button
+            className="p-2 -ml-2"
+            aria-label={menuOpen ? "Close menu" : "Open menu"}
+            onClick={() => { setMenuOpen((o) => !o); closeSearch(); }}
+          >
+            <AnimatePresence mode="wait" initial={false}>
+              {menuOpen ? (
+                <motion.span key="x" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }}>
+                  <X className="w-5 h-5" />
+                </motion.span>
+              ) : (
+                <motion.span key="menu" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.15 }}>
+                  <Menu className="w-5 h-5" />
+                </motion.span>
+              )}
+            </AnimatePresence>
           </button>
           <button
             className="p-2"
@@ -85,7 +111,6 @@ export function Navbar() {
         {/* Right */}
         <div className="flex items-center gap-2">
           <div className="hidden lg:flex items-center gap-2">
-            {/* Search bar + icon */}
             <div className="flex items-center">
               <AnimatePresence>
                 {searchOpen && (
@@ -108,10 +133,7 @@ export function Navbar() {
                         className="w-full bg-transparent text-sm outline-none py-1 placeholder:text-muted-foreground"
                       />
                       {query && (
-                        <button
-                          onClick={() => setQuery("")}
-                          className="p-0.5 text-muted-foreground hover:text-foreground transition-colors shrink-0"
-                        >
+                        <button onClick={() => setQuery("")} className="p-0.5 text-muted-foreground hover:text-foreground transition-colors shrink-0">
                           <X className="w-3.5 h-3.5" />
                         </button>
                       )}
@@ -119,7 +141,6 @@ export function Navbar() {
                   </motion.div>
                 )}
               </AnimatePresence>
-
               <button
                 className="p-2 hover:text-primary/70 transition-colors"
                 aria-label={searchOpen ? "Submit search" : "Open search"}
@@ -129,7 +150,6 @@ export function Navbar() {
                 <Search className="w-5 h-5" />
               </button>
             </div>
-
             <Link href="/admin" className="p-2 hover:text-primary/70 transition-colors">
               <User className="w-5 h-5" />
             </Link>
@@ -150,7 +170,49 @@ export function Navbar() {
         </div>
       </div>
 
-      {/* Mobile search bar — drops below the header */}
+      {/* Mobile menu drawer */}
+      <AnimatePresence>
+        {menuOpen && (
+          <motion.div
+            key="mobile-menu"
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="lg:hidden overflow-hidden bg-background border-t border-border/40"
+          >
+            <nav className="container mx-auto px-4 py-6 flex flex-col gap-0">
+              {navLinks.map((link, i) => (
+                <motion.div
+                  key={link.href}
+                  initial={{ opacity: 0, x: -12 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.04, duration: 0.2 }}
+                >
+                  <Link
+                    href={link.href}
+                    className="block py-3.5 border-b border-border/30 text-sm uppercase tracking-widest font-medium text-foreground hover:text-muted-foreground transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                </motion.div>
+              ))}
+
+              {/* Bottom utility links */}
+              <div className="flex items-center gap-6 mt-6 pt-2">
+                <Link href="/wishlist" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  <Heart className="w-4 h-4" /> Wishlist
+                </Link>
+                <Link href="/admin" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                  <User className="w-4 h-4" /> Admin
+                </Link>
+              </div>
+            </nav>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Mobile search bar */}
       <AnimatePresence>
         {searchOpen && (
           <motion.div
