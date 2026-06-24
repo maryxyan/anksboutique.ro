@@ -16,10 +16,10 @@ router.post("/newsletter/subscribe", async (req, res): Promise<void> => {
       email: parsed.data.email,
       name: parsed.data.name,
     });
-    res.status(201).json({ success: true, message: "Subscribed successfully!" });
+    res.status(201).json({ success: true, message: "Abonare reușită!" });
   } catch {
     // Likely unique constraint violation (already subscribed)
-    res.status(200).json({ success: true, message: "Already subscribed!" });
+    res.status(200).json({ success: true, message: "Ești deja abonat!" });
   }
 });
 

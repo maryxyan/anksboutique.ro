@@ -158,7 +158,7 @@ router.get("/products/:id", async (req, res): Promise<void> => {
     .where(eq(productsTable.id, params.data.id));
 
   if (!row) {
-    res.status(404).json({ error: "Product not found" });
+    res.status(404).json({ error: "Produsul nu a fost găsit" });
     return;
   }
 
@@ -219,7 +219,7 @@ router.patch("/products/:id", async (req, res): Promise<void> => {
     .returning();
 
   if (!product) {
-    res.status(404).json({ error: "Product not found" });
+    res.status(404).json({ error: "Produsul nu a fost găsit" });
     return;
   }
 
@@ -240,7 +240,7 @@ router.delete("/products/:id", async (req, res): Promise<void> => {
     .returning();
 
   if (!product) {
-    res.status(404).json({ error: "Product not found" });
+    res.status(404).json({ error: "Produsul nu a fost găsit" });
     return;
   }
 

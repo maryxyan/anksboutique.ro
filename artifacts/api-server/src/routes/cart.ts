@@ -21,7 +21,7 @@ async function buildCart(sessionId: string) {
   const cartItems = items.map((row) => ({
     id: row.cartItem.id,
     productId: row.cartItem.productId,
-    productTitle: row.product?.title ?? "Unknown",
+    productTitle: row.product?.title ?? "Produs necunoscut",
     productImage: row.product?.images?.[0] ?? null,
     price: parseFloat(row.cartItem.price),
     quantity: row.cartItem.quantity,
@@ -62,7 +62,7 @@ router.post("/cart/items", async (req, res): Promise<void> => {
 
   const [product] = await db.select().from(productsTable).where(eq(productsTable.id, productId));
   if (!product) {
-    res.status(404).json({ error: "Product not found" });
+    res.status(404).json({ error: "Produsul nu a fost găsit" });
     return;
   }
 
@@ -119,7 +119,7 @@ router.patch("/cart/items/:itemId", async (req, res): Promise<void> => {
     .returning();
 
   if (!item) {
-    res.status(404).json({ error: "Cart item not found" });
+    res.status(404).json({ error: "Produsul din coș nu a fost găsit" });
     return;
   }
 
@@ -140,7 +140,7 @@ router.delete("/cart/items/:itemId", async (req, res): Promise<void> => {
     .returning();
 
   if (!item) {
-    res.status(404).json({ error: "Cart item not found" });
+    res.status(404).json({ error: "Produsul din coș nu a fost găsit" });
     return;
   }
 

@@ -87,7 +87,7 @@ router.post("/orders", async (req, res): Promise<void> => {
     .where(eq(cartItemsTable.sessionId, sessionId));
 
   if (cartItems.length === 0) {
-    res.status(400).json({ error: "Cart is empty" });
+    res.status(400).json({ error: "Coșul este gol" });
     return;
   }
 
@@ -155,7 +155,7 @@ router.get("/orders/:id", async (req, res): Promise<void> => {
 
   const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, params.data.id));
   if (!order) {
-    res.status(404).json({ error: "Order not found" });
+    res.status(404).json({ error: "Comanda nu a fost găsită" });
     return;
   }
 
@@ -182,7 +182,7 @@ router.patch("/orders/:id/status", async (req, res): Promise<void> => {
     .returning();
 
   if (!order) {
-    res.status(404).json({ error: "Order not found" });
+    res.status(404).json({ error: "Comanda nu a fost găsită" });
     return;
   }
 

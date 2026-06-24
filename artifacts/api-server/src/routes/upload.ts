@@ -28,14 +28,14 @@ const upload = multer({
     if (allowed.includes(file.mimetype)) {
       cb(null, true);
     } else {
-      cb(new Error("Only image files are allowed"));
+      cb(new Error("Sunt permise doar fișiere imagine"));
     }
   },
 });
 
 router.post("/upload/image", upload.single("file"), (req, res): void => {
   if (!req.file) {
-    res.status(400).json({ error: "No file uploaded" });
+    res.status(400).json({ error: "Nu a fost încărcat niciun fișier" });
     return;
   }
 
@@ -49,7 +49,7 @@ router.get("/uploads/:filename", (req, res): void => {
   const filename = path.basename(req.params.filename as string);
   const filePath = path.join(uploadsDir, filename);
   if (!fs.existsSync(filePath)) {
-    res.status(404).json({ error: "File not found" });
+    res.status(404).json({ error: "Fișierul nu a fost găsit" });
     return;
   }
   res.sendFile(filePath);

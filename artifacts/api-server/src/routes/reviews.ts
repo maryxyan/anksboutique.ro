@@ -46,7 +46,7 @@ router.post("/products/:id/reviews", async (req, res): Promise<void> => {
 
   const [product] = await db.select().from(productsTable).where(eq(productsTable.id, params.data.id));
   if (!product) {
-    res.status(404).json({ error: "Product not found" });
+    res.status(404).json({ error: "Produsul nu a fost găsit" });
     return;
   }
 
