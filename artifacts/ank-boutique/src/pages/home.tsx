@@ -150,7 +150,7 @@ export default function Home() {
               <button
                 onClick={() => scroll("prev")}
                 aria-label="Previous"
-                className="absolute left-0 top-[40%] -translate-y-1/2 -translate-x-1/2 z-10 w-11 h-11 bg-background/90 backdrop-blur border border-border shadow-md flex items-center justify-center hover:bg-foreground hover:text-background transition-colors"
+                className="absolute left-0 top-[40%] -translate-y-1/2 -translate-x-1/2 z-10 w-10 h-10 rounded-full bg-background/50 backdrop-blur-sm border border-border/40 shadow-sm flex items-center justify-center hover:bg-background/80 transition-all opacity-70 hover:opacity-100"
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
@@ -161,7 +161,7 @@ export default function Home() {
               <button
                 onClick={() => scroll("next")}
                 aria-label="Next"
-                className="absolute right-0 top-[40%] -translate-y-1/2 translate-x-1/2 z-10 w-11 h-11 bg-background/90 backdrop-blur border border-border shadow-md flex items-center justify-center hover:bg-foreground hover:text-background transition-colors"
+                className="absolute right-0 top-[40%] -translate-y-1/2 translate-x-1/2 z-10 w-10 h-10 rounded-full bg-background/50 backdrop-blur-sm border border-border/40 shadow-sm flex items-center justify-center hover:bg-background/80 transition-all opacity-70 hover:opacity-100"
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
