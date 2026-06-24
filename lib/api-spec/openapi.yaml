@@ -595,6 +595,10 @@ components:
           type: array
           items:
             type: string
+        colors:
+          type: array
+          items:
+            type: string
         stock:
           type: integer
         inStock:
@@ -632,6 +636,10 @@ components:
           type: array
           items:
             type: string
+        colors:
+          type: array
+          items:
+            type: string
         stock:
           type: integer
         badge:
@@ -657,6 +665,10 @@ components:
         categoryId:
           type: integer
         sizes:
+          type: array
+          items:
+            type: string
+        colors:
           type: array
           items:
             type: string

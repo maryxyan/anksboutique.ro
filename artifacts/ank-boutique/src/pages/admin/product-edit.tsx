@@ -15,6 +15,28 @@ import { Link } from "wouter";
 
 const SIZES = ["XS", "S", "M", "L", "XL", "XXL"];
 const BADGES = ["", "New", "Best Seller", "Limited"];
+const COLORS = [
+  { name: "White", hex: "#FFFFFF" },
+  { name: "Ivory", hex: "#FFFFF0" },
+  { name: "Beige", hex: "#F5F0E8" },
+  { name: "Blush", hex: "#FFB6C1" },
+  { name: "Red", hex: "#C0392B" },
+  { name: "Burgundy", hex: "#800020" },
+  { name: "Pink", hex: "#E91E8C" },
+  { name: "Orange", hex: "#E67E22" },
+  { name: "Yellow", hex: "#F1C40F" },
+  { name: "Mint", hex: "#98D8C8" },
+  { name: "Green", hex: "#27AE60" },
+  { name: "Teal", hex: "#008080" },
+  { name: "Navy", hex: "#1B2A5A" },
+  { name: "Blue", hex: "#2980B9" },
+  { name: "Lilac", hex: "#C8A2C8" },
+  { name: "Purple", hex: "#7D3C98" },
+  { name: "Camel", hex: "#C19A6B" },
+  { name: "Brown", hex: "#6D4C41" },
+  { name: "Grey", hex: "#95A5A6" },
+  { name: "Black", hex: "#1A1A1A" },
+];
 
 export default function AdminProductEdit() {
   const { id } = useParams();
@@ -39,6 +61,7 @@ export default function AdminProductEdit() {
     comparePrice: "",
     categoryId: "",
     sizes: [] as string[],
+    colors: [] as string[],
     stock: "0",
     badge: "",
     sku: "",
@@ -59,6 +82,7 @@ export default function AdminProductEdit() {
         comparePrice: String(product.comparePrice || ""),
         categoryId: String(product.categoryId || ""),
         sizes: product.sizes || [],
+        colors: product.colors || [],
         stock: String(product.stock || 0),
         badge: product.badge || "",
         sku: product.sku || "",
@@ -105,6 +129,13 @@ export default function AdminProductEdit() {
     }));
   };
 
+  const toggleColor = (color: string) => {
+    setForm((f) => ({
+      ...f,
+      colors: f.colors.includes(color) ? f.colors.filter((c) => c !== color) : [...f.colors, color],
+    }));
+  };
+
   const removeImage = (idx: number) => {
     setForm((f) => ({ ...f, images: f.images.filter((_, i) => i !== idx) }));
   };
@@ -129,6 +160,7 @@ export default function AdminProductEdit() {
       comparePrice: form.comparePrice ? parseFloat(form.comparePrice) : undefined,
       categoryId: parseInt(form.categoryId, 10),
       sizes: form.sizes,
+      colors: form.colors,
       stock: parseInt(form.stock, 10) || 0,
       badge: form.badge || undefined,
       sku: form.sku || undefined,
@@ -346,6 +378,44 @@ export default function AdminProductEdit() {
                   </button>
                 ))}
               </div>
+            </div>
+
+            <div className="bg-background border border-border p-6">
+              <h2 className="text-xs uppercase tracking-widest font-medium text-muted-foreground mb-4">Colors</h2>
+              <div className="flex flex-wrap gap-2">
+                {COLORS.map(({ name, hex }) => {
+                  const selected = form.colors.includes(name);
+                  const isLight = ["White", "Ivory", "Beige", "Blush", "Yellow", "Mint"].includes(name);
+                  return (
+                    <button
+                      key={name}
+                      type="button"
+                      title={name}
+                      onClick={() => toggleColor(name)}
+                      className={`relative w-8 h-8 rounded-full border-2 transition-all ${
+                        selected
+                          ? "border-foreground scale-110 shadow-md"
+                          : isLight
+                          ? "border-border hover:border-muted-foreground"
+                          : "border-transparent hover:border-muted-foreground"
+                      }`}
+                      style={{ backgroundColor: hex }}
+                    >
+                      {selected && (
+                        <Check
+                          className={`absolute inset-0 m-auto w-3.5 h-3.5 ${isLight ? "text-foreground" : "text-white"}`}
+                          strokeWidth={3}
+                        />
+                      )}
+                    </button>
+                  );
+                })}
+              </div>
+              {form.colors.length > 0 && (
+                <p className="text-xs text-muted-foreground mt-3">
+                  {form.colors.join(", ")}
+                </p>
+              )}
             </div>
 
             <button

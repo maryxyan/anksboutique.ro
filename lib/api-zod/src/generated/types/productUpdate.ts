@@ -15,6 +15,7 @@ export interface ProductUpdate {
   images?: string[];
   categoryId?: number;
   sizes?: string[];
+  colors?: string[];
   stock?: number;
   /** @nullable */
   badge?: string | null;

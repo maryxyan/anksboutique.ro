@@ -14,6 +14,7 @@ export interface ProductInput {
   images: string[];
   categoryId: number;
   sizes?: string[];
+  colors?: string[];
   stock?: number;
   badge?: string;
   sku?: string;

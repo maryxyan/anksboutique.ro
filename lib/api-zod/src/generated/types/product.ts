@@ -19,6 +19,7 @@ export interface Product {
   /** @nullable */
   categoryName?: string | null;
   sizes?: string[];
+  colors?: string[];
   stock?: number;
   inStock: boolean;
   /** @nullable */

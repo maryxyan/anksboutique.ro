@@ -22,6 +22,7 @@ export interface Product {
   /** @nullable */
   categoryName?: string | null;
   sizes?: string[];
+  colors?: string[];
   stock?: number;
   inStock: boolean;
   /** @nullable */
@@ -42,6 +43,7 @@ export interface ProductInput {
   images: string[];
   categoryId: number;
   sizes?: string[];
+  colors?: string[];
   stock?: number;
   badge?: string;
   sku?: string;
@@ -56,6 +58,7 @@ export interface ProductUpdate {
   images?: string[];
   categoryId?: number;
   sizes?: string[];
+  colors?: string[];
   stock?: number;
   /** @nullable */
   badge?: string | null;

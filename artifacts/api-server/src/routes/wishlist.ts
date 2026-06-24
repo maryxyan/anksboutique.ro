@@ -17,6 +17,7 @@ function buildProductResponse(product: any, category: any, reviewData: any) {
     categoryId: product.categoryId,
     categoryName: category?.name ?? null,
     sizes: product.sizes || [],
+    colors: product.colors || [],
     stock: product.stock,
     inStock: product.stock > 0,
     badge: product.badge,
