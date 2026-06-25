@@ -21,6 +21,8 @@ import AdminInventory from "@/pages/admin/inventory";
 import LivrareRetururi from "@/pages/livrare";
 import GhidMarimi from "@/pages/ghid-marimi";
 import FAQ from "@/pages/faq";
+import PoliticaConfidentialitate from "@/pages/confidentialitate";
+import TermeniConditii from "@/pages/termeni";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +40,8 @@ function Router() {
       <Route path="/livrare" component={LivrareRetururi} />
       <Route path="/ghid-marimi" component={GhidMarimi} />
       <Route path="/faq" component={FAQ} />
+      <Route path="/confidentialitate" component={PoliticaConfidentialitate} />
+      <Route path="/termeni" component={TermeniConditii} />
 
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/products" component={AdminProducts} />

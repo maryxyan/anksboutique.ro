@@ -100,8 +100,8 @@ export function Footer() {
       <div className="container mx-auto px-4 mt-8 pt-6 border-t border-primary-foreground/10 text-sm text-primary-foreground/50 flex flex-col md:flex-row justify-between items-center gap-4">
         <p>&copy; {new Date().getFullYear()} Ank's Boutique. Toate drepturile rezervate.</p>
         <div className="flex gap-4">
-          <a href="#" className="hover:text-primary-foreground transition-colors">Politica de Confidențialitate</a>
-          <a href="#" className="hover:text-primary-foreground transition-colors">Termeni și Condiții</a>
+          <Link href="/confidentialitate" className="hover:text-primary-foreground transition-colors">Politica de Confidențialitate</Link>
+          <Link href="/termeni" className="hover:text-primary-foreground transition-colors">Termeni și Condiții</Link>
         </div>
       </div>
     </footer>
