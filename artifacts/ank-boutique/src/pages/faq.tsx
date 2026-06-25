@@ -1,0 +1,177 @@
+import { useState } from "react";
+import { ChevronDown, ChevronUp } from "lucide-react";
+import { Layout } from "@/components/layout/Layout";
+import { Link } from "wouter";
+
+const FAQS = [
+  {
+    category: "Comenzi",
+    items: [
+      {
+        q: "Cum plasez o comandă?",
+        a: "Adaugă produsele dorite în coș, completează datele de livrare și finalizează plata. Vei primi un email de confirmare imediat după plasarea comenzii. Dacă preferi, poți comanda și direct prin WhatsApp.",
+      },
+      {
+        q: "Pot modifica sau anula o comandă după plasare?",
+        a: "Poți anula sau modifica comanda dacă nu a fost expediată încă. Contactează-ne cât mai rapid pe WhatsApp sau email. Odată ce comanda a fost predată curierului, nu mai putem interveni, dar poți iniția un retur.",
+      },
+      {
+        q: "Cum știu că comanda mea a fost confirmată?",
+        a: "Vei primi un email de confirmare la adresa introdusă la comandă. Dacă nu l-ai primit în 15 minute, verifică folderul Spam sau contactează-ne.",
+      },
+      {
+        q: "Pot comanda prin WhatsApp?",
+        a: "Da! Poți trimite un mesaj direct pe WhatsApp cu produsele dorite și mărimile, iar noi te vom ajuta să finalizezi comanda rapid și simplu.",
+      },
+    ],
+  },
+  {
+    category: "Livrare",
+    items: [
+      {
+        q: "În cât timp primesc comanda?",
+        a: "Livrarea standard durează 3–5 zile lucrătoare. Dacă alegi livrarea expresă, coletul ajunge în 24–48 ore. Comenzile plasate înainte de ora 14:00 sunt procesate în aceeași zi.",
+      },
+      {
+        q: "Livrarea este gratuită?",
+        a: "Da, livrarea este gratuită pentru toate comenzile de peste 300 RON. Sub această valoare, costul livrării standard este de 15 RON, iar livrarea expresă costă 25 RON.",
+      },
+      {
+        q: "Cum urmăresc coletul?",
+        a: "Imediat ce comanda este predată curierului, vei primi un email cu numărul de urmărire și linkul direct de tracking Fan Courier sau DPD.",
+      },
+      {
+        q: "Livrați în afara României?",
+        a: "Momentan livrăm exclusiv în România. Lucrăm la extinderea livrărilor internaționale — urmărește-ne pe Instagram pentru noutăți.",
+      },
+    ],
+  },
+  {
+    category: "Retururi & Rambursări",
+    items: [
+      {
+        q: "Cât timp am la dispoziție pentru retur?",
+        a: "Ai 30 de zile de la primirea coletului pentru a iniția un retur — depășim cu mult cele 14 zile impuse de legislația UE (OUG 34/2014).",
+      },
+      {
+        q: "Cât costă returul?",
+        a: "Returul este complet gratuit. Îți trimitem o etichetă prepaid pe email, o tipărești, o lipești pe colet și îl predai la orice punct Fan Courier.",
+      },
+      {
+        q: "Când primesc banii înapoi?",
+        a: "Rambursăm suma integral în 5–7 zile lucrătoare de la primirea și verificarea produsului returnat. Suma revine prin aceeași metodă de plată utilizată la cumpărare.",
+      },
+      {
+        q: "Pot returna un produs purtat?",
+        a: "Nu, produsele trebuie returnate în starea originală, cu etichetele intacte și nemodificate. Lenjeria intimă, bijuteriile și accesoriile personale nu pot fi returnate din motive igienice.",
+      },
+    ],
+  },
+  {
+    category: "Produse & Mărimi",
+    items: [
+      {
+        q: "Cum aleg mărimea potrivită?",
+        a: "Consultă ghidul nostru de mărimi disponibil pe site. Dacă ești între două mărimi, recomandăm mărimea mai mare. Poți și să ne contactezi pe WhatsApp — te ajutăm să alegi înainte de comandă.",
+      },
+      {
+        q: "Produsele sunt autentice?",
+        a: "Toate produsele Ank's Boutique sunt selectate cu atenție și provin din surse verificate. Lucrăm cu designeri și furnizori de calitate pentru a-ți oferi piese de modă autentice.",
+      },
+      {
+        q: "Cum îngrijesc produsele?",
+        a: "Instrucțiunile de îngrijire sunt indicate pe eticheta fiecărui produs. Te rugăm să le urmezi pentru a păstra calitatea pieselor. Pentru sfaturi specifice, nu ezita să ne contactezi.",
+      },
+    ],
+  },
+  {
+    category: "Plăți",
+    items: [
+      {
+        q: "Ce metode de plată acceptați?",
+        a: "Acceptăm plata cu card bancar (Visa, Mastercard) prin platforma securizată Netopia Payments. Toate tranzacțiile sunt criptate și protejate.",
+      },
+      {
+        q: "Este sigur să plătesc cu cardul pe site?",
+        a: "Da. Plățile sunt procesate de Netopia Payments, unul dintre cei mai importanți procesatori de plăți din România, certificat PCI-DSS. Noi nu stocăm niciodată datele cardului tău.",
+      },
+      {
+        q: "Primesc factură pentru comandă?",
+        a: "Da, factura este inclusă în email-ul de confirmare a comenzii. Dacă ai nevoie de o factură cu date de firmă, menționează-le la plasarea comenzii sau contactează-ne.",
+      },
+    ],
+  },
+];
+
+function FaqItem({ q, a }: { q: string; a: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="border-b border-border last:border-b-0">
+      <button
+        className="w-full flex items-center justify-between py-4 text-left gap-4"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+      >
+        <span className="text-sm font-medium leading-snug">{q}</span>
+        {open ? (
+          <ChevronUp className="w-4 h-4 text-muted-foreground shrink-0" />
+        ) : (
+          <ChevronDown className="w-4 h-4 text-muted-foreground shrink-0" />
+        )}
+      </button>
+      {open && (
+        <p className="text-sm text-muted-foreground pb-4 leading-relaxed pr-8">{a}</p>
+      )}
+    </div>
+  );
+}
+
+export default function FAQ() {
+  return (
+    <Layout>
+      <div className="container mx-auto px-4 py-16 max-w-3xl">
+        {/* Header */}
+        <div className="text-center mb-16">
+          <h1 className="text-4xl font-serif mb-4">Întrebări Frecvente</h1>
+          <p className="text-muted-foreground max-w-xl mx-auto leading-relaxed">
+            Găsești mai jos răspunsuri la cele mai comune întrebări. Nu ai găsit ce cauți?{" "}
+            <Link href="/contact" className="underline underline-offset-2 hover:text-foreground transition-colors">
+              Contactează-ne
+            </Link>{" "}
+            și îți răspundem în maxim 24 ore.
+          </p>
+        </div>
+
+        {/* FAQ sections */}
+        <div className="space-y-10">
+          {FAQS.map((section) => (
+            <section key={section.category}>
+              <h2 className="text-xs font-medium uppercase tracking-widest text-muted-foreground mb-4 pb-2 border-b border-border">
+                {section.category}
+              </h2>
+              <div className="border border-border divide-y divide-border px-5">
+                {section.items.map((item) => (
+                  <FaqItem key={item.q} q={item.q} a={item.a} />
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+
+        {/* CTA */}
+        <div className="mt-16 text-center border border-border p-10">
+          <p className="text-lg font-serif mb-2">Nu ai găsit răspunsul?</p>
+          <p className="text-sm text-muted-foreground mb-6">
+            Echipa noastră este disponibilă pe WhatsApp și email în fiecare zi.
+          </p>
+          <Link
+            href="/contact"
+            className="inline-block bg-foreground text-background px-8 py-3 text-sm uppercase tracking-widest font-medium hover:bg-foreground/80 transition-colors"
+          >
+            Contactează-ne
+          </Link>
+        </div>
+      </div>
+    </Layout>
+  );
+}

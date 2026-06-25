@@ -18,6 +18,9 @@ import AdminProducts from "@/pages/admin/products";
 import AdminProductEdit from "@/pages/admin/product-edit";
 import AdminOrders from "@/pages/admin/orders";
 import AdminInventory from "@/pages/admin/inventory";
+import LivrareRetururi from "@/pages/livrare";
+import GhidMarimi from "@/pages/ghid-marimi";
+import FAQ from "@/pages/faq";
 
 const queryClient = new QueryClient();
 
@@ -31,6 +34,10 @@ function Router() {
       <Route path="/checkout" component={Checkout} />
       <Route path="/wishlist" component={Wishlist} />
       <Route path="/contact" component={Contact} />
+
+      <Route path="/livrare" component={LivrareRetururi} />
+      <Route path="/ghid-marimi" component={GhidMarimi} />
+      <Route path="/faq" component={FAQ} />
 
       <Route path="/admin" component={AdminDashboard} />
       <Route path="/admin/products" component={AdminProducts} />

@@ -25,9 +25,9 @@ export function Footer() {
           <h4 className="text-sm font-semibold tracking-wider uppercase">Suport</h4>
           <ul className="space-y-2 text-sm text-primary-foreground/70">
             <li><Link href="/contact" className="hover:text-primary-foreground transition-colors">Contactează-ne</Link></li>
-            <li><a href="#" className="hover:text-primary-foreground transition-colors">Livrare & Retururi</a></li>
-            <li><a href="#" className="hover:text-primary-foreground transition-colors">Ghid de Mărimi</a></li>
-            <li><a href="#" className="hover:text-primary-foreground transition-colors">Întrebări Frecvente</a></li>
+            <li><Link href="/livrare" className="hover:text-primary-foreground transition-colors">Livrare & Retururi</Link></li>
+            <li><Link href="/ghid-marimi" className="hover:text-primary-foreground transition-colors">Ghid de Mărimi</Link></li>
+            <li><Link href="/faq" className="hover:text-primary-foreground transition-colors">Întrebări Frecvente</Link></li>
           </ul>
         </div>
         
