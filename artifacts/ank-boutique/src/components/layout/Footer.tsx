@@ -40,8 +40,64 @@ export function Footer() {
           </ul>
         </div>
       </div>
+
+      {/* ANPC & SOL compliance badges */}
+      <div className="container mx-auto px-4 mt-12 pt-8 border-t border-primary-foreground/10">
+        <p className="text-xs text-primary-foreground/40 uppercase tracking-widest mb-4">Soluționarea litigiilor</p>
+        <div className="flex flex-wrap gap-3 items-stretch">
+          {/* ANPC SAL badge */}
+          <a
+            href="https://reclamatiisal.anpc.ro/"
+            target="_blank"
+            rel="noreferrer noopener"
+            aria-label="ANPC — Soluționarea Alternativă a Litigiilor"
+            className="flex items-stretch border border-primary-foreground/20 hover:border-primary-foreground/50 transition-colors group overflow-hidden"
+          >
+            <div className="bg-[#003DA5] flex items-center justify-center px-3 py-2.5 shrink-0">
+              <span className="text-white font-bold text-xs tracking-widest leading-none">ANPC</span>
+            </div>
+            <div className="px-3 py-2 flex flex-col justify-center">
+              <span className="text-[10px] font-semibold text-primary-foreground/90 uppercase tracking-wider leading-none">SAL</span>
+              <span className="text-[9px] text-primary-foreground/50 mt-0.5 leading-tight">Soluționarea Alternativă<br />a Litigiilor</span>
+            </div>
+          </a>
+
+          {/* SOL / ODR badge */}
+          <a
+            href="https://ec.europa.eu/consumers/odr/main/index.cfm?event=main.home.chooseLanguage"
+            target="_blank"
+            rel="noreferrer noopener"
+            aria-label="SOL — Platforma Europeană de Soluționare Online a Litigiilor"
+            className="flex items-stretch border border-primary-foreground/20 hover:border-primary-foreground/50 transition-colors group overflow-hidden"
+          >
+            <div className="bg-[#003399] flex items-center justify-center px-3 py-2.5 shrink-0">
+              {/* EU stars */}
+              <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden="true">
+                <circle cx="11" cy="11" r="10" fill="#003399" />
+                {Array.from({ length: 12 }).map((_, i) => {
+                  const angle = (i * 30 - 90) * (Math.PI / 180);
+                  const x = 11 + 7.5 * Math.cos(angle);
+                  const y = 11 + 7.5 * Math.sin(angle);
+                  return (
+                    <text key={i} x={x} y={y} textAnchor="middle" dominantBaseline="central" fontSize="4" fill="#FFCC00">
+                      ★
+                    </text>
+                  );
+                })}
+              </svg>
+            </div>
+            <div className="px-3 py-2 flex flex-col justify-center">
+              <span className="text-[10px] font-semibold text-primary-foreground/90 uppercase tracking-wider leading-none">SOL</span>
+              <span className="text-[9px] text-primary-foreground/50 mt-0.5 leading-tight">Soluționarea Online<br />a Litigiilor</span>
+            </div>
+          </a>
+        </div>
+        <p className="text-[10px] text-primary-foreground/35 mt-3 leading-relaxed max-w-lg">
+          Conform OUG 34/2014 și Regulamentului (UE) nr. 524/2013, consumatorii pot apela la proceduri de soluționare alternativă a litigiilor prin ANPC sau platforma SOL a Comisiei Europene.
+        </p>
+      </div>
       
-      <div className="container mx-auto px-4 mt-16 pt-8 border-t border-primary-foreground/10 text-sm text-primary-foreground/50 flex flex-col md:flex-row justify-between items-center gap-4">
+      <div className="container mx-auto px-4 mt-8 pt-6 border-t border-primary-foreground/10 text-sm text-primary-foreground/50 flex flex-col md:flex-row justify-between items-center gap-4">
         <p>&copy; {new Date().getFullYear()} Ank's Boutique. Toate drepturile rezervate.</p>
         <div className="flex gap-4">
           <a href="#" className="hover:text-primary-foreground transition-colors">Politica de Confidențialitate</a>
