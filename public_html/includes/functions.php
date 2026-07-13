@@ -3,7 +3,26 @@
  * Utility functions
  */
 
+function getCsrfToken(): string {
+    if (empty($_SESSION['csrf_token'])) {
+        $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
+    }
+    return $_SESSION['csrf_token'];
+}
+
+function requireCsrfToken(): void {
+    $token = $_POST['csrf_token'] ?? '';
+    $valid = is_string($_SESSION['csrf_token'] ?? null) && hash_equals($_SESSION['csrf_token'], $token);
+    if (!$valid) {
+        http_response_code(403);
+        header('Content-Type: text/plain; charset=utf-8');
+        echo 'Forbidden (CSRF)';
+        exit;
+    }
+}
+
 function escape($str) {
+
     return htmlspecialchars($str, ENT_QUOTES | ENT_HTML5, 'UTF-8');
 }
 

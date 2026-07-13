@@ -7,30 +7,44 @@ $db = getDB();
 $message = getFlash('success');
 $error = getFlash('error');
 
-// Handle delete
-if (isset($_GET['delete'])) {
-    $id = (int)$_GET['delete'];
-    $stmt = $db->prepare("DELETE FROM products WHERE id = ?");
-    $stmt->bindValue(1, $id, SQLITE3_INTEGER);
-    $stmt->execute();
+// Handle delete (POST + CSRF)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete_product') {
+    requireCsrfToken();
+
+    $id = (int)($_POST['id'] ?? 0);
+    if ($id > 0) {
+        $stmt = $db->prepare("DELETE FROM products WHERE id = ?");
+        $stmt->bindValue(1, $id, SQLITE3_INTEGER);
+        $stmt->execute();
+    }
+
     setFlash('Produsul a fost șters.', 'success');
     redirect('/admin/products.php');
 }
 
-// Handle delete color variant image
-if (isset($_GET['delete_color']) && isset($_GET['product_id'])) {
-    $colorId = (int)$_GET['delete_color'];
-    $productId = (int)$_GET['product_id'];
-    $stmt = $db->prepare("DELETE FROM product_variant_images WHERE id = ? AND product_id = ?");
-    $stmt->bindValue(1, $colorId, SQLITE3_INTEGER);
-    $stmt->bindValue(2, $productId, SQLITE3_INTEGER);
-    $stmt->execute();
+// Handle delete color variant image (POST + CSRF)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete_color') {
+    requireCsrfToken();
+
+    $colorId = (int)($_POST['delete_color'] ?? 0);
+    $productId = (int)($_POST['product_id'] ?? 0);
+
+    if ($colorId > 0 && $productId > 0) {
+        $stmt = $db->prepare("DELETE FROM product_variant_images WHERE id = ? AND product_id = ?");
+        $stmt->bindValue(1, $colorId, SQLITE3_INTEGER);
+        $stmt->bindValue(2, $productId, SQLITE3_INTEGER);
+        $stmt->execute();
+    }
+
     setFlash('Imaginea pentru culoare a fost ștearsă.', 'success');
     redirect('/admin/products.php?edit=' . $productId);
 }
 
+
 // Handle add/edit form submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
+    requireCsrfToken();
+
     $name = trim($_POST['name'] ?? '');
     $category_id = (int)($_POST['category_id'] ?? 0);
     $description = trim($_POST['description'] ?? '');
@@ -88,6 +102,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
 // Handle add color variant image
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'add_color') {
+    requireCsrfToken();
+
     $productId = (int)($_POST['product_id'] ?? 0);
     $colorName = trim($_POST['color_name'] ?? '');
     // Support both URL and file upload for color image
@@ -195,6 +211,8 @@ $categories = $db->query("SELECT * FROM categories ORDER BY sort_order ASC");
                 </div>
                 <form method="POST" enctype="multipart/form-data" style="padding:1.5rem">
                     <input type="hidden" name="action" value="<?= $editProduct ? 'edit' : 'add' ?>">
+                    <input type="hidden" name="csrf_token" value="<?= escape(getCsrfToken()) ?>">
+
                     <?php if ($editProduct): ?>
                     <input type="hidden" name="id" value="<?= $editProduct['id'] ?>">
                     <?php endif; ?>
@@ -288,9 +306,14 @@ $categories = $db->query("SELECT * FROM categories ORDER BY sort_order ASC");
                         </div>
                         <div style="padding:0.75rem;display:flex;justify-content:space-between;align-items:center">
                             <span style="font-size:0.85rem;font-weight:600"><?= escape($vi['color_name']) ?></span>
-                            <a href="/admin/products.php?delete_color=<?= $vi['id'] ?>&amp;product_id=<?= $editProduct['id'] ?>" 
-                               style="color:var(--color-accent);font-size:0.75rem" 
-                               onclick="return confirm('Ștergi imaginea pentru culoarea „<?= escape($vi['color_name']) ?>”?')">✕</a>
+                            <form method="POST" action="/admin/products.php" style="display:inline" onsubmit="return confirm('Ștergi imaginea pentru culoarea „<?= escape($vi['color_name']) ?>”?')">
+                                <input type="hidden" name="action" value="delete_color">
+                                <input type="hidden" name="csrf_token" value="<?= escape(getCsrfToken()) ?>">
+                                <input type="hidden" name="delete_color" value="<?= (int)$vi['id'] ?>">
+                                <input type="hidden" name="product_id" value="<?= (int)$editProduct['id'] ?>">
+                                <button type="submit" style="background:none;border:none;color:var(--color-accent);font-size:0.75rem;cursor:pointer;padding:0">✕</button>
+                            </form>
+
                         </div>
                     </div>
                     <?php endforeach; ?>
@@ -304,6 +327,8 @@ $categories = $db->query("SELECT * FROM categories ORDER BY sort_order ASC");
                 <div style="padding:1rem 1.5rem;border-top:1px solid var(--color-border);background:var(--color-bg-alt)">
                     <form method="POST" enctype="multipart/form-data" style="display:flex;flex-wrap:wrap;gap:0.75rem;align-items:flex-end">
                         <input type="hidden" name="action" value="add_color">
+                        <input type="hidden" name="csrf_token" value="<?= escape(getCsrfToken()) ?>">
+
                         <input type="hidden" name="product_id" value="<?= $editProduct['id'] ?>">
                         <div style="flex:1;min-width:150px">
                             <label style="display:block;font-size:0.8rem;font-weight:600;margin-bottom:0.25rem;color:var(--color-text-light)">Nume culoare</label>
@@ -351,7 +376,13 @@ $categories = $db->query("SELECT * FROM categories ORDER BY sort_order ASC");
                             <td>
                                 <a href="/admin/products.php?edit=<?= $p['id'] ?>" style="color:var(--color-primary);font-size:0.85rem">Editează</a>
                                 &nbsp;|&nbsp;
-                                <a href="/admin/products.php?delete=<?= $p['id'] ?>" style="color:var(--color-accent);font-size:0.85rem" onclick="return confirm('Ștergi acest produs?')">Șterge</a>
+                            <form method="POST" action="/admin/products.php" style="display:inline" onsubmit="return confirm('Ștergi acest produs?')">
+                                <input type="hidden" name="action" value="delete_product">
+                                <input type="hidden" name="csrf_token" value="<?= escape(getCsrfToken()) ?>">
+                                <input type="hidden" name="id" value="<?= (int)$p['id'] ?>">
+                                <button type="submit" style="background:none;border:none;color:var(--color-accent);font-size:0.85rem;cursor:pointer;padding:0">Șterge</button>
+                            </form>
+
                             </td>
                         </tr>
                         <?php endwhile; ?>

@@ -13,6 +13,17 @@ if (strpos($path, '/api') !== 0 && !empty($_SERVER['REDIRECT_URL'])) {
     $path = $_SERVER['REDIRECT_URL'];
 }
 
+// Strict defense-in-depth: only allow proxying /api/*
+// (Avoid open proxy / SSRF via path manipulation)
+$path = '/' . ltrim((string)$path, '/');
+if (!( $path === '/api' || strpos($path, '/api/') === 0 )) {
+    http_response_code(404);
+    header('Content-Type: text/plain; charset=utf-8');
+    echo 'Not Found';
+    exit;
+}
+
+
 // Build target URL
 $target = $apiUrl . $path;
 if ($query) {

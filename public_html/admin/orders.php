@@ -3,23 +3,28 @@ $pageTitle = 'Admin - Comenzi';
 require_once __DIR__ . '/../includes/header.php';
 requireAdmin();
 
+db_error_reporting: '';
 $db = getDB();
 $message = getFlash('success');
 $statusFilter = $_GET['status'] ?? '';
 
-// Handle status update
-if (isset($_GET['update_status']) && isset($_GET['id'])) {
-    $newStatus = $_GET['update_status'];
-    $orderId = (int)$_GET['id'];
+// Handle status update (POST + CSRF)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_status') {
+    requireCsrfToken();
+
+    $newStatus = $_POST['update_status'] ?? '';
+    $orderId = (int)($_POST['id'] ?? 0);
+
     $allowedStatuses = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
-    
-    if (in_array($newStatus, $allowedStatuses)) {
+
+    if (in_array($newStatus, $allowedStatuses, true)) {
         $stmt = $db->prepare("UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?");
         $stmt->bindValue(1, $newStatus, SQLITE3_TEXT);
         $stmt->bindValue(2, $orderId, SQLITE3_INTEGER);
         $stmt->execute();
         setFlash('Statusul comenzii a fost actualizat.', 'success');
     }
+
     redirect('/admin/orders.php');
 }
 
@@ -29,11 +34,13 @@ if ($statusFilter) {
     $where = "WHERE o.status = :status";
 }
 
-$orders = $db->prepare("
+$orders = $db->prepare(
+    "
     SELECT o.* FROM orders o $where 
     ORDER BY o.created_at DESC 
     LIMIT 50
-");
+"
+);
 if ($statusFilter) {
     $orders->bindValue(':status', $statusFilter, SQLITE3_TEXT);
 }
@@ -44,24 +51,24 @@ $result = $orders->execute();
     <aside class="admin-sidebar">
         <div class="logo">Anks<span>Boutique</span></div>
         <ul class="admin-nav">
-            <li><a href="/admin/"><span class="icon">📊</span>Dashboard</a></li>
+            <li><a href="/admin/"> <span class="icon">📊</span>Dashboard</a></li>
             <li><a href="/admin/products.php"><span class="icon">📦</span>Produse</a></li>
             <li><a href="/admin/orders.php" class="active"><span class="icon">📋</span>Comenzi</a></li>
             <li><a href="/admin/users.php"><span class="icon">👥</span>Utilizatori</a></li>
             <li><a href="/"><span class="icon">←</span>Înapoi la site</a></li>
         </ul>
     </aside>
-    
+
     <div class="admin-main">
         <div class="admin-header">
             <h2>Comenzi</h2>
         </div>
-        
+
         <div class="admin-content">
             <?php if ($message): ?>
             <div class="alert alert-success"><?= escape($message) ?></div>
             <?php endif; ?>
-            
+
             <!-- Status Filter -->
             <div style="display:flex;gap:0.5rem;margin-bottom:1.5rem;flex-wrap:wrap">
                 <a href="/admin/orders.php" class="btn btn-sm <?= !$statusFilter ? 'btn-primary' : 'btn-secondary' ?>">Toate</a>
@@ -71,7 +78,7 @@ $result = $orders->execute();
                 <a href="/admin/orders.php?status=delivered" class="btn btn-sm <?= $statusFilter === 'delivered' ? 'btn-primary' : 'btn-secondary' ?>">Livrate</a>
                 <a href="/admin/orders.php?status=cancelled" class="btn btn-sm <?= $statusFilter === 'cancelled' ? 'btn-primary' : 'btn-secondary' ?>">Anulate</a>
             </div>
-            
+
             <div class="table-container">
                 <table>
                     <thead>
@@ -86,9 +93,9 @@ $result = $orders->execute();
                         </tr>
                     </thead>
                     <tbody>
-                        <?php 
+                        <?php
                         $hasOrders = false;
-                        while ($o = $result->fetchArray(SQLITE3_ASSOC)): 
+                        while ($o = $result->fetchArray(SQLITE3_ASSOC)):
                             $hasOrders = true;
                         ?>
                         <tr>
@@ -110,14 +117,19 @@ $result = $orders->execute();
                             </td>
                             <td><?= date('d.m.Y H:i', strtotime($o['created_at'])) ?></td>
                             <td>
-                                <select onchange="if(this.value) window.location.href=this.value" class="form-select" style="width:auto;padding:0.3rem 0.5rem;font-size:0.8rem">
-                                    <option value="">Schimbă status</option>
-                                    <option value="/admin/orders.php?update_status=pending&id=<?= $o['id'] ?>">În procesare</option>
-                                    <option value="/admin/orders.php?update_status=confirmed&id=<?= $o['id'] ?>">Confirmată</option>
-                                    <option value="/admin/orders.php?update_status=shipped&id=<?= $o['id'] ?>">Expediată</option>
-                                    <option value="/admin/orders.php?update_status=delivered&id=<?= $o['id'] ?>">Livrată</option>
-                                    <option value="/admin/orders.php?update_status=cancelled&id=<?= $o['id'] ?>">Anulată</option>
-                                </select>
+                                <form method="POST" action="/admin/orders.php" style="margin:0">
+                                    <input type="hidden" name="action" value="update_status">
+                                    <input type="hidden" name="id" value="<?= $o['id'] ?>">
+                                    <input type="hidden" name="csrf_token" value="<?= escape(getCsrfToken()) ?>">
+                                    <select name="update_status" onchange="this.form.submit()" class="form-select" style="width:auto;padding:0.3rem 0.5rem;font-size:0.8rem">
+                                        <option value="">Schimbă status</option>
+                                        <option value="pending">În procesare</option>
+                                        <option value="confirmed">Confirmată</option>
+                                        <option value="shipped">Expediată</option>
+                                        <option value="delivered">Livrată</option>
+                                        <option value="cancelled">Anulată</option>
+                                    </select>
+                                </form>
                             </td>
                         </tr>
                         <?php endwhile; ?>
@@ -136,3 +148,4 @@ $result = $orders->execute();
 </div>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>
+
