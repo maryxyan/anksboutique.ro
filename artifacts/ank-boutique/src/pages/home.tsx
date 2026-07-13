@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { Layout } from "@/components/layout/Layout";
 import { Link } from "wouter";
 import { useListFeaturedProducts, useListNewArrivals } from "@workspace/api-client-react";
@@ -41,6 +42,16 @@ export default function Home() {
   };
 
   return (
+    <>
+      <Helmet>
+        <title>Anks Boutique — Modă și Accesorii Premium pentru Femei</title>
+        <meta name="description" content="Descoperă colecția exclusivă Anks Boutique: rochii elegante, compleuri rafinate și accesorii statement. Piese premium pentru femeia modernă — livrare în toată România." />
+        <meta property="og:title" content="Anks Boutique — Modă și Accesorii Premium" />
+        <meta property="og:description" content="Descoperă colecția exclusivă Anks Boutique: rochii elegante, compleuri rafinate și accesorii statement." />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={window.location.href} />
+        <link rel="canonical" href="https://anksboutique.ro" />
+      </Helmet>
     <Layout>
       {/* Hero Section */}
       <section className="relative h-[85vh] w-full bg-muted overflow-hidden flex items-center justify-center">
@@ -48,6 +59,7 @@ export default function Home() {
           <img 
             src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2000&auto=format&fit=crop" 
             alt="Ank's Boutique" 
+            loading="lazy"
             className="w-full h-full object-cover object-center opacity-80"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent mix-blend-multiply" />
@@ -116,6 +128,7 @@ export default function Home() {
           <img 
             src="https://images.unsplash.com/photo-1550614000-4b95d466f272?q=80&w=1200&auto=format&fit=crop" 
             alt="Editorial" 
+            loading="lazy"
             className="w-full h-full object-cover"
           />
         </div>
@@ -200,6 +213,6 @@ export default function Home() {
           </form>
         </div>
       </section>
-    </Layout>
+    </Layout></>
   );
 }

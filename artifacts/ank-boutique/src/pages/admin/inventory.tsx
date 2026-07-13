@@ -56,7 +56,7 @@ export default function AdminInventory() {
                     <td className="px-4 py-3">
                       <div className="w-10 h-12 bg-muted overflow-hidden shrink-0">
                         {item.images?.[0] ? (
-                          <img src={item.images[0]} alt="" className="w-full h-full object-cover" />
+                          <img src={item.images[0]} alt={item.title} loading="lazy" className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
                             <ImageIcon className="w-3 h-3 text-border" />

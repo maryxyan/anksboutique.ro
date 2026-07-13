@@ -1,5 +1,6 @@
+import { Helmet } from "react-helmet-async";
 import { Layout } from "@/components/layout/Layout";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useListProducts, useListCategories } from "@workspace/api-client-react";
 import { ProductCard } from "@/components/ui/product-card";
@@ -29,12 +30,58 @@ export default function Shop() {
   
   const { data: categories } = useListCategories();
 
+  const currentCategory = useMemo(() => {
+    if (!category || !categories) return null;
+    return categories.find(c => c.slug === category);
+  }, [category, categories]);
+
+  const pageTitle = currentCategory 
+    ? `${currentCategory.name} — Modă ${currentCategory.name.toLowerCase()} | Anks Boutique`
+    : search 
+      ? `Căutare: ${search} | Anks Boutique`
+      : "Colecție — Modă și Accesorii | Anks Boutique";
+
+  const pageDescription = currentCategory
+    ? `Descoperă selecția noastră de ${currentCategory.name.toLowerCase()}. Piese premium, livrare rapidă în toată România — Anks Boutique.`
+    : search
+      ? `Rezultate căutare pentru "${search}" în magazinul Anks Boutique. Găsește produsul perfect pentru tine.`
+      : "Explorează colecția completă Anks Boutique: rochii elegante, bluze, accesorii și piese statement pentru femei. Livrare în toată România.";
+
   return (
+    <>
+      <Helmet>
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDescription} />
+        <meta property="og:title" content={pageTitle} />
+        <meta property="og:description" content={pageDescription} />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={window.location.href} />
+        {category && <link rel="canonical" href={`https://anksboutique.ro/shop?category=${category}`} />}
+
+        {/* BreadcrumbList Schema */}
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "BreadcrumbList",
+          "itemListElement": [
+            { "@type": "ListItem", "position": 1, "name": "Acasă", "item": "https://anksboutique.ro/" },
+            {
+              "@type": "ListItem",
+              "position": 2,
+              "name": currentCategory ? currentCategory.name : (search ? `Căutare: ${search}` : "Colecție"),
+              "item": window.location.href,
+            },
+          ],
+        })}</script>
+      </Helmet>
     <Layout>
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">
-          <h1 className="text-4xl font-serif mb-4">Colecție</h1>
-          <p className="text-muted-foreground text-sm">Descoperă selecția noastră rafinată de piese premium.</p>
+          <h1 className="text-4xl font-serif mb-4">{currentCategory ? currentCategory.name : "Colecție"}</h1>
+          <p className="text-muted-foreground text-sm">
+            {currentCategory 
+              ? `Descoperă selecția noastră de ${currentCategory.name.toLowerCase()}.` 
+              : "Descoperă selecția noastră rafinată de piese premium."}
+          </p>
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
@@ -118,6 +165,6 @@ export default function Shop() {
           </div>
         </div>
       </div>
-    </Layout>
+    </Layout></>
   );
 }

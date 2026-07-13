@@ -13,6 +13,7 @@ export interface ProductUpdate {
   /** @nullable */
   comparePrice?: number | null;
   images?: string[];
+  colorImages?: Record<string, string[]>;
   categoryId?: number;
   sizes?: string[];
   colors?: string[];

@@ -1,13 +1,16 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useLocation } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
-import { Upload, X, GripVertical, Check, ArrowLeft } from "lucide-react";
+import { Upload, X, Check, ArrowLeft, Plus } from "lucide-react";
+import { toast } from "sonner";
 import {
   useGetProduct,
   getGetProductQueryKey,
   useCreateProduct,
   useUpdateProduct,
   useListCategories,
+  useCreateCategory,
+  getListCategoriesQueryKey,
   getListProductsQueryKey,
 } from "@workspace/api-client-react";
 import { AdminLayout } from "./layout";
@@ -38,6 +41,22 @@ const COLORS = [
   { name: "Black", hex: "#1A1A1A" },
 ];
 
+function slugify(text: string) {
+  return text
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+function getColorHex(colorName: string): string {
+  return COLORS.find((c) => c.name === colorName)?.hex || "#ccc";
+}
+
+function isLightColor(colorName: string): boolean {
+  return ["White", "Ivory", "Beige", "Blush", "Yellow", "Mint"].includes(colorName);
+}
+
 export default function AdminProductEdit() {
   const { id } = useParams();
   const [, navigate] = useLocation();
@@ -47,6 +66,7 @@ export default function AdminProductEdit() {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const dropZoneRef = useRef<HTMLDivElement>(null);
+  const colorFileInputRef = useRef<HTMLInputElement>(null);
 
   const { data: product } = useGetProduct(productId!, {
     query: { enabled: !!productId, queryKey: getGetProductQueryKey(productId!) },
@@ -66,12 +86,19 @@ export default function AdminProductEdit() {
     badge: "",
     sku: "",
     images: [] as string[],
+    colorImages: {} as Record<string, string[]>,
   });
 
   const [isDragging, setIsDragging] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [saved, setSaved] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [activeColorForImage, setActiveColorForImage] = useState<string | null>(null);
+
+  // Category creation state
+  const [showNewCategory, setShowNewCategory] = useState(false);
+  const [newCatName, setNewCatName] = useState("");
+  const [newCatSlug, setNewCatSlug] = useState("");
 
   useEffect(() => {
     if (product && !isNew) {
@@ -87,19 +114,19 @@ export default function AdminProductEdit() {
         badge: product.badge || "",
         sku: product.sku || "",
         images: product.images || [],
+        colorImages: (product as any).colorImages || {},
       });
     }
   }, [product, isNew]);
 
   const createProduct = useCreateProduct();
   const updateProduct = useUpdateProduct();
+  const createCategory = useCreateCategory();
 
-  const handleImageFiles = async (files: FileList | File[]) => {
-    setUploading(true);
-    const fileArr = Array.from(files);
+  // ---- Generic upload helper ----
+  const uploadFiles = async (files: FileList | File[]): Promise<string[]> => {
     const urls: string[] = [];
-
-    for (const file of fileArr) {
+    for (const file of Array.from(files)) {
       if (!file.type.startsWith("image/")) continue;
       const fd = new FormData();
       fd.append("file", file);
@@ -108,10 +135,22 @@ export default function AdminProductEdit() {
         if (res.ok) {
           const data = await res.json();
           urls.push(data.url);
+          toast.success(`${file.name} — încărcare reușită`);
+        } else {
+          const errData = await res.json().catch(() => ({ error: "Eroare necunoscută" }));
+          toast.error(`${file.name} — ${errData.error || "încărcare eșuată"}`);
         }
-      } catch {}
+      } catch {
+        toast.error(`${file.name} — eroare de rețea`);
+      }
     }
+    return urls;
+  };
 
+  // ---- Main images ----
+  const handleImageFiles = async (files: FileList | File[]) => {
+    setUploading(true);
+    const urls = await uploadFiles(files);
     setForm((f) => ({ ...f, images: [...f.images, ...urls] }));
     setUploading(false);
   };
@@ -122,6 +161,51 @@ export default function AdminProductEdit() {
     if (e.dataTransfer.files.length) handleImageFiles(e.dataTransfer.files);
   };
 
+  const removeImage = (idx: number) => {
+    setForm((f) => ({ ...f, images: f.images.filter((_, i) => i !== idx) }));
+  };
+
+  // ---- Color images ----
+  const handleColorImageFiles = async (files: FileList | File[], colorName: string) => {
+    setUploading(true);
+    const urls = await uploadFiles(files);
+    setForm((f) => ({
+      ...f,
+      colorImages: {
+        ...f.colorImages,
+        [colorName]: [...(f.colorImages[colorName] || []), ...urls],
+      },
+    }));
+    setUploading(false);
+  };
+
+  const removeColorImage = (colorName: string, imgIdx: number) => {
+    setForm((f) => ({
+      ...f,
+      colorImages: {
+        ...f.colorImages,
+        [colorName]: (f.colorImages[colorName] || []).filter((_, i) => i !== imgIdx),
+      },
+    }));
+  };
+
+  const triggerColorUpload = (colorName: string) => {
+    setActiveColorForImage(colorName);
+    // Use setTimeout to ensure state is set before click
+    setTimeout(() => {
+      colorFileInputRef.current?.click();
+    }, 0);
+  };
+
+  const onColorFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && activeColorForImage) {
+      handleColorImageFiles(e.target.files, activeColorForImage);
+      setActiveColorForImage(null);
+      e.target.value = "";
+    }
+  };
+
+  // ---- Sizes ----
   const toggleSize = (size: string) => {
     setForm((f) => ({
       ...f,
@@ -129,6 +213,7 @@ export default function AdminProductEdit() {
     }));
   };
 
+  // ---- Colors (selection toggle) ----
   const toggleColor = (color: string) => {
     setForm((f) => ({
       ...f,
@@ -136,10 +221,7 @@ export default function AdminProductEdit() {
     }));
   };
 
-  const removeImage = (idx: number) => {
-    setForm((f) => ({ ...f, images: f.images.filter((_, i) => i !== idx) }));
-  };
-
+  // ---- Validation ----
   const validate = () => {
     const e: Record<string, string> = {};
     if (!form.title.trim()) e.title = "Câmp obligatoriu";
@@ -149,6 +231,7 @@ export default function AdminProductEdit() {
     return Object.keys(e).length === 0;
   };
 
+  // ---- Submit ----
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
@@ -165,6 +248,7 @@ export default function AdminProductEdit() {
       badge: form.badge || undefined,
       sku: form.sku || undefined,
       images: form.images,
+      colorImages: form.colorImages,
     };
 
     if (isNew) {
@@ -193,6 +277,37 @@ export default function AdminProductEdit() {
     }
   };
 
+  // ---- Category creation ----
+  const handleCreateCategory = () => {
+    if (!newCatName.trim() || !newCatSlug.trim()) return;
+    createCategory.mutate(
+      { data: { name: newCatName.trim(), slug: newCatSlug.trim() } },
+      {
+        onSuccess: (newCat) => {
+          queryClient.invalidateQueries({ queryKey: getListCategoriesQueryKey() });
+          setForm((f) => ({ ...f, categoryId: String(newCat.id) }));
+          setShowNewCategory(false);
+          setNewCatName("");
+          setNewCatSlug("");
+        },
+      }
+    );
+  };
+
+  const openNewCategory = () => {
+    setShowNewCategory(true);
+    setNewCatName("");
+    setNewCatSlug("");
+  };
+
+  const onNewCatNameChange = (val: string) => {
+    setNewCatName(val);
+    setNewCatSlug(slugify(val));
+  };
+
+  // ---- Compute selected color data for the color images section ----
+  const selectedColors = COLORS.filter((c) => form.colors.includes(c.name));
+
   return (
     <AdminLayout>
       <div className="flex items-center gap-4 mb-8">
@@ -204,8 +319,9 @@ export default function AdminProductEdit() {
 
       <form onSubmit={handleSubmit}>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Main Info */}
+          {/* ===== Column 1-2: Main Info + Images + Color Images ===== */}
           <div className="lg:col-span-2 space-y-6">
+            {/* Details */}
             <div className="bg-background border border-border p-6 space-y-4">
               <h2 className="text-xs uppercase tracking-widest font-medium text-muted-foreground mb-4">Detalii Produs</h2>
 
@@ -274,9 +390,9 @@ export default function AdminProductEdit() {
               </div>
             </div>
 
-            {/* Images */}
+            {/* Main Images */}
             <div className="bg-background border border-border p-6">
-              <h2 className="text-xs uppercase tracking-widest font-medium text-muted-foreground mb-4">Imagini Produs</h2>
+              <h2 className="text-xs uppercase tracking-widest font-medium text-muted-foreground mb-4">Imagini Generale</h2>
 
               <div
                 ref={dropZoneRef}
@@ -292,7 +408,7 @@ export default function AdminProductEdit() {
                 <p className="text-sm text-muted-foreground">
                   {uploading ? "Se încarcă..." : "Trage & plasează imagini aici, sau apasă pentru a alege"}
                 </p>
-                <p className="text-xs text-muted-foreground mt-1">JPG, PNG, WebP, maxim 10MB fiecare</p>
+                <p className="text-xs text-muted-foreground mt-1">JPG, PNG, WebP, maxim 15MB fiecare</p>
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -307,7 +423,7 @@ export default function AdminProductEdit() {
                 <div className="flex flex-wrap gap-3 mt-4">
                   {form.images.map((url, i) => (
                     <div key={i} className="relative group w-24 h-28 bg-muted overflow-hidden">
-                      <img src={url} alt="" className="w-full h-full object-cover" />
+                      <img src={url} alt={form.title || "Imagine produs"} loading="lazy" className="w-full h-full object-cover" />
                       <button
                         type="button"
                         onClick={() => removeImage(i)}
@@ -325,25 +441,157 @@ export default function AdminProductEdit() {
                 </div>
               )}
             </div>
+
+            {/* Color Images Section */}
+            {selectedColors.length > 0 && (
+              <div className="bg-background border border-border p-6">
+                <h2 className="text-xs uppercase tracking-widest font-medium text-muted-foreground mb-4">
+                  Imagini pe Culori
+                </h2>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Asociază imagini specifice fiecărei culori selectate. Acestea vor fi afișate în galeria produsului când utilizatorul selectează o culoare.
+                </p>
+
+                {/* Hidden file input for color images */}
+                <input
+                  ref={colorFileInputRef}
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                  onChange={onColorFileChange}
+                />
+
+                <div className="space-y-6">
+                  {selectedColors.map(({ name, hex }) => {
+                    const colorImgs = form.colorImages[name] || [];
+                    return (
+                      <div key={name} className="border border-border p-4">
+                        <div className="flex items-center gap-3 mb-3">
+                          <div
+                            className="w-6 h-6 rounded-full border"
+                            style={{ backgroundColor: hex, borderColor: isLightColor(name) ? "#ccc" : hex }}
+                          />
+                          <span className="text-sm font-medium">{name}</span>
+                          <span className="text-xs text-muted-foreground">
+                            ({colorImgs.length} imagini)
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => triggerColorUpload(name)}
+                            className="ml-auto flex items-center gap-1.5 h-8 px-3 border border-border text-[10px] uppercase tracking-widest hover:border-foreground transition-colors"
+                            disabled={uploading}
+                          >
+                            <Plus className="w-3 h-3" />
+                            Adaugă
+                          </button>
+                        </div>
+
+                        {colorImgs.length > 0 ? (
+                          <div className="flex flex-wrap gap-2">
+                            {colorImgs.map((url, i) => (
+                              <div key={i} className="relative group w-20 h-22 bg-muted overflow-hidden">
+                                <img src={url} alt={`${name} ${i + 1}`} loading="lazy" className="w-full h-full object-cover" />
+                                <button
+                                  type="button"
+                                  onClick={() => removeColorImage(name, i)}
+                                  className="absolute top-1 right-1 p-1 bg-background/80 opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                  <X className="w-3 h-3" />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground italic">
+                            Nicio imagine asociată. Apasă "Adaugă" pentru a încărca.
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {selectedColors.length === 0 && form.colors.length === 0 && (
+              <div className="bg-background border border-border p-6">
+                <h2 className="text-xs uppercase tracking-widest font-medium text-muted-foreground mb-4">Imagini pe Culori</h2>
+                <p className="text-xs text-muted-foreground">
+                  Selectează culori pentru produs în sidebar-ul din dreapta, apoi poți asocia imagini specifice fiecărei culori.
+                </p>
+              </div>
+            )}
           </div>
 
-          {/* Sidebar */}
+          {/* ===== Column 3: Sidebar ===== */}
           <div className="space-y-4">
             <div className="bg-background border border-border p-6 space-y-4">
               <h2 className="text-xs uppercase tracking-widest font-medium text-muted-foreground mb-4">Organizare</h2>
 
               <FormField label="Categorie" error={errors.categoryId}>
-                <select
-                  value={form.categoryId}
-                  onChange={(e) => setForm((f) => ({ ...f, categoryId: e.target.value }))}
-                  className={inputCls(!!errors.categoryId)}
-                >
-                  <option value="">Selectează categoria...</option>
-                  {categories?.map((cat) => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
-                  ))}
-                </select>
+                <div className="flex gap-2">
+                  <select
+                    value={form.categoryId}
+                    onChange={(e) => setForm((f) => ({ ...f, categoryId: e.target.value }))}
+                    className={inputCls(!!errors.categoryId) + " flex-1"}
+                  >
+                    <option value="">Selectează categoria...</option>
+                    {categories?.map((cat) => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={openNewCategory}
+                    className="shrink-0 h-[42px] w-[42px] flex items-center justify-center border border-border hover:border-foreground transition-colors"
+                    title="Adaugă categorie nouă"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
               </FormField>
+
+              {showNewCategory && (
+                <div className="border border-border p-4 space-y-3 bg-muted/20">
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">Categorie Nouă</p>
+                  <div>
+                    <input
+                      type="text"
+                      value={newCatName}
+                      onChange={(e) => onNewCatNameChange(e.target.value)}
+                      className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-foreground outline-none transition-colors"
+                      placeholder="Nume categorie"
+                    />
+                  </div>
+                  <div>
+                    <input
+                      type="text"
+                      value={newCatSlug}
+                      onChange={(e) => setNewCatSlug(e.target.value)}
+                      className="w-full border border-border bg-background px-3 py-2 text-sm focus:border-foreground outline-none transition-colors font-mono text-xs"
+                      placeholder="slug-categorie"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={handleCreateCategory}
+                      disabled={createCategory.isPending || !newCatName.trim() || !newCatSlug.trim()}
+                      className="flex-1 h-9 bg-foreground text-background text-xs uppercase tracking-widest font-medium hover:bg-foreground/80 disabled:opacity-40 transition-colors"
+                    >
+                      {createCategory.isPending ? "Se creează..." : "Creează"}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowNewCategory(false)}
+                      className="h-9 px-4 border border-border text-xs uppercase tracking-widest hover:bg-muted transition-colors"
+                    >
+                      Anulează
+                    </button>
+                  </div>
+                </div>
+              )}
 
               <FormField label="Etichetă">
                 <select
@@ -383,7 +631,7 @@ export default function AdminProductEdit() {
               <div className="flex flex-wrap gap-2">
                 {COLORS.map(({ name, hex }) => {
                   const selected = form.colors.includes(name);
-                  const isLight = ["White", "Ivory", "Beige", "Blush", "Yellow", "Mint"].includes(name);
+                  const light = isLightColor(name);
                   return (
                     <button
                       key={name}
@@ -393,7 +641,7 @@ export default function AdminProductEdit() {
                       className={`relative w-8 h-8 rounded-full border-2 transition-all ${
                         selected
                           ? "border-foreground scale-110 shadow-md"
-                          : isLight
+                          : light
                           ? "border-border hover:border-muted-foreground"
                           : "border-transparent hover:border-muted-foreground"
                       }`}
@@ -401,7 +649,7 @@ export default function AdminProductEdit() {
                     >
                       {selected && (
                         <Check
-                          className={`absolute inset-0 m-auto w-3.5 h-3.5 ${isLight ? "text-foreground" : "text-white"}`}
+                          className={`absolute inset-0 m-auto w-3.5 h-3.5 ${light ? "text-foreground" : "text-white"}`}
                           strokeWidth={3}
                         />
                       )}

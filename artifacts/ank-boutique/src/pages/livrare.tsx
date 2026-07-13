@@ -1,9 +1,10 @@
 import { Truck, RotateCcw, Clock, MapPin, CreditCard, AlertCircle } from "lucide-react";
+import { Helmet } from "react-helmet-async";
 import { Layout } from "@/components/layout/Layout";
 
 export default function LivrareRetururi() {
   return (
-    <Layout>
+    <><Helmet><title>Livrare si Retururi | Anks Boutique</title><meta name="robots" content="noindex, follow" /></Helmet><Layout>
       <div className="container mx-auto px-4 py-16 max-w-4xl">
         {/* Header */}
         <div className="text-center mb-16">
@@ -125,6 +126,15 @@ export default function LivrareRetururi() {
                   <span>Produsele personalizate sau la comandă nu sunt eligibile pentru retur</span>
                 </li>
               </ul>
+              <div className="mt-6 pt-6 border-t border-border">
+                <a
+                  href="/retur"
+                  className="inline-flex items-center gap-2 bg-foreground text-background px-6 py-3 text-sm font-medium uppercase tracking-widest hover:opacity-90 transition-opacity"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  Formular Retur
+                </a>
+              </div>
             </div>
           </div>
         </section>
@@ -146,6 +156,6 @@ export default function LivrareRetururi() {
           </div>
         </section>
       </div>
-    </Layout>
+    </Layout></>
   );
 }

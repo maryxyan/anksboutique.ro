@@ -79,7 +79,7 @@ export default function AdminProducts() {
                   <td className="px-4 py-3">
                     <div className="w-12 h-14 bg-muted overflow-hidden">
                       {product.images?.[0] ? (
-                        <img src={product.images[0]} alt="" className="w-full h-full object-cover" />
+                        <img src={product.images[0]} alt={product.title} loading="lazy" className="w-full h-full object-cover" />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
                           <ImageIcon className="w-4 h-4 text-border" />
@@ -94,8 +94,8 @@ export default function AdminProducts() {
                   <td className="px-4 py-3 text-muted-foreground hidden md:table-cell">{product.categoryName || "—"}</td>
                   <td className="px-4 py-3">{Number(product.price).toFixed(2)} RON</td>
                   <td className="px-4 py-3 hidden lg:table-cell">
-                    <span className={`text-xs font-medium ${product.stock <= 5 ? "text-destructive" : "text-green-700"}`}>
-                      {product.stock}
+                    <span className={`text-xs font-medium ${(product.stock ?? 0) <= 5 ? "text-destructive" : "text-green-700"}`}>
+                      {product.stock ?? 0}
                     </span>
                   </td>
                   <td className="px-4 py-3">

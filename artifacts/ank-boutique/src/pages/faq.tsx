@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Helmet } from "react-helmet-async";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { Layout } from "@/components/layout/Layout";
 import { Link } from "wouter";
@@ -128,7 +129,7 @@ function FaqItem({ q, a }: { q: string; a: string }) {
 
 export default function FAQ() {
   return (
-    <Layout>
+    <><Helmet><title>Intrebari Frecvente | Anks Boutique</title><meta name="robots" content="noindex, follow" /></Helmet><Layout>
       <div className="container mx-auto px-4 py-16 max-w-3xl">
         {/* Header */}
         <div className="text-center mb-16">
@@ -172,6 +173,6 @@ export default function FAQ() {
           </Link>
         </div>
       </div>
-    </Layout>
+    </Layout></>
   );
 }

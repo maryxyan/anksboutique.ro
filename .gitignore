@@ -47,3 +47,11 @@ Thumbs.db
 # Replit
 .cache/
 .local/
+
+# Additional ignores for local development
+.env
+*.db
+*.sqlite
+*.log
+*.pid
+uploads/

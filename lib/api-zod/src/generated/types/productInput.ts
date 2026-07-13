@@ -12,6 +12,7 @@ export interface ProductInput {
   price: number;
   comparePrice?: number;
   images: string[];
+  colorImages?: Record<string, string[]>;
   categoryId: number;
   sizes?: string[];
   colors?: string[];

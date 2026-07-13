@@ -9,6 +9,8 @@ import reviewsRouter from "./reviews";
 import newsletterRouter from "./newsletter";
 import adminRouter from "./admin";
 import uploadRouter from "./upload";
+import sitemapRouter from "./sitemap";
+import accountRouter from "./account";
 
 const router: IRouter = Router();
 
@@ -22,5 +24,7 @@ router.use(reviewsRouter);
 router.use(newsletterRouter);
 router.use(adminRouter);
 router.use(uploadRouter);
+router.use(sitemapRouter);
+router.use(accountRouter);
 
 export default router;

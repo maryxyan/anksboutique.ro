@@ -1,4 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
+import { Helmet } from "react-helmet-async";
 import { useQueryClient } from "@tanstack/react-query";
 import { Heart } from "lucide-react";
 import { Link } from "wouter";
@@ -36,7 +37,7 @@ export default function Wishlist() {
   const isEmpty = !wishlist || wishlist.length === 0;
 
   return (
-    <Layout>
+    <><Helmet><title>Lista de Dorinte | Anks Boutique</title><meta name="robots" content="noindex, nofollow" /></Helmet><Layout>
       <div className="container mx-auto px-4 py-12 lg:py-20">
         <div className="flex items-end justify-between mb-12">
           <h1 className="text-3xl lg:text-4xl font-serif">Listă de Dorințe</h1>
@@ -79,6 +80,6 @@ export default function Wishlist() {
           </div>
         )}
       </div>
-    </Layout>
+    </Layout></>
   );
 }

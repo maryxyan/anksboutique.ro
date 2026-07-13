@@ -39,6 +39,7 @@ export const ListProductsResponse = zod.object({
   "price": zod.number(),
   "comparePrice": zod.number().nullish(),
   "images": zod.array(zod.string()),
+  "colorImages": zod.record(zod.array(zod.string())).nullish(),
   "categoryId": zod.number(),
   "categoryName": zod.string().nullish(),
   "sizes": zod.array(zod.string()).optional(),
@@ -66,6 +67,7 @@ export const CreateProductBody = zod.object({
   "price": zod.number(),
   "comparePrice": zod.number().optional(),
   "images": zod.array(zod.string()),
+  "colorImages": zod.record(zod.array(zod.string())).optional(),
   "categoryId": zod.number(),
   "sizes": zod.array(zod.string()).optional(),
   "colors": zod.array(zod.string()).optional(),
@@ -85,6 +87,7 @@ export const ListFeaturedProductsResponseItem = zod.object({
   "price": zod.number(),
   "comparePrice": zod.number().nullish(),
   "images": zod.array(zod.string()),
+  "colorImages": zod.record(zod.array(zod.string())).nullish(),
   "categoryId": zod.number(),
   "categoryName": zod.string().nullish(),
   "sizes": zod.array(zod.string()).optional(),
@@ -110,6 +113,7 @@ export const ListNewArrivalsResponseItem = zod.object({
   "price": zod.number(),
   "comparePrice": zod.number().nullish(),
   "images": zod.array(zod.string()),
+  "colorImages": zod.record(zod.array(zod.string())).nullish(),
   "categoryId": zod.number(),
   "categoryName": zod.string().nullish(),
   "sizes": zod.array(zod.string()).optional(),
@@ -139,6 +143,7 @@ export const GetProductResponse = zod.object({
   "price": zod.number(),
   "comparePrice": zod.number().nullish(),
   "images": zod.array(zod.string()),
+  "colorImages": zod.record(zod.array(zod.string())).nullish(),
   "categoryId": zod.number(),
   "categoryName": zod.string().nullish(),
   "sizes": zod.array(zod.string()).optional(),
@@ -166,6 +171,7 @@ export const UpdateProductBody = zod.object({
   "price": zod.number().optional(),
   "comparePrice": zod.number().nullish(),
   "images": zod.array(zod.string()).optional(),
+  "colorImages": zod.record(zod.array(zod.string())).optional(),
   "categoryId": zod.number().optional(),
   "sizes": zod.array(zod.string()).optional(),
   "colors": zod.array(zod.string()).optional(),
@@ -181,6 +187,7 @@ export const UpdateProductResponse = zod.object({
   "price": zod.number(),
   "comparePrice": zod.number().nullish(),
   "images": zod.array(zod.string()),
+  "colorImages": zod.record(zod.array(zod.string())).nullish(),
   "categoryId": zod.number(),
   "categoryName": zod.string().nullish(),
   "sizes": zod.array(zod.string()).optional(),
@@ -447,6 +454,21 @@ export const UpdateOrderStatusResponse = zod.object({
   "createdAt": zod.string()
 })
 
+/**
+ * @summary List inventory (admin)
+ */
+export const ListInventoryResponseItem = zod.object({
+  "id": zod.number(),
+  "title": zod.string(),
+  "sku": zod.string().nullable(),
+  "stock": zod.number(),
+  "price": zod.number(),
+  "categoryName": zod.string().nullable(),
+  "badge": zod.string().nullish(),
+  "images": zod.array(zod.string()).optional()
+})
+export const ListInventoryResponse = zod.array(ListInventoryResponseItem)
+
 
 /**
  * @summary Get wishlist by session
@@ -465,6 +487,7 @@ export const GetWishlistResponseItem = zod.object({
   "price": zod.number(),
   "comparePrice": zod.number().nullish(),
   "images": zod.array(zod.string()),
+  "colorImages": zod.record(zod.array(zod.string())).nullish(),
   "categoryId": zod.number(),
   "categoryName": zod.string().nullish(),
   "sizes": zod.array(zod.string()).optional(),
@@ -575,21 +598,3 @@ export const GetAdminStatsResponse = zod.object({
   "createdAt": zod.string()
 }))
 })
-
-
-/**
- * @summary List all products with inventory details
- */
-export const ListInventoryResponseItem = zod.object({
-  "id": zod.number(),
-  "title": zod.string(),
-  "sku": zod.string().nullable(),
-  "stock": zod.number(),
-  "price": zod.number(),
-  "categoryName": zod.string().nullable(),
-  "badge": zod.string().nullish(),
-  "images": zod.array(zod.string()).optional()
-})
-export const ListInventoryResponse = zod.array(ListInventoryResponseItem)
-
-

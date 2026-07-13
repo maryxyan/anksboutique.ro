@@ -1,0 +1,9 @@
+[30-Jun-2026 21:45:10 UTC] PHP Parse error:  syntax error, unexpected end of file in /home/r142031anks/public_html/prerender.php on line 157
+[30-Jun-2026 21:45:15 UTC] PHP Parse error:  syntax error, unexpected end of file in /home/r142031anks/public_html/prerender.php on line 157
+[01-Jul-2026 00:45:24 Europe/Bucharest] PHP Parse error:  Unclosed '{' on line 37 in /home/r142031anks/public_html/prerender.php on line 157
+[01-Jul-2026 00:45:27 Europe/Bucharest] PHP Parse error:  Unclosed '{' on line 37 in prerender.php on line 157
+[01-Jul-2026 09:35:54 Europe/Bucharest] PHP Fatal error:  Uncaught Error: Call to undefined function mb_substr() in /home/r142031anks/public_html/prerender.php:58
+Stack trace:
+#0 Standard input code(5): include()
+#1 {main}
+  thrown in /home/r142031anks/public_html/prerender.php on line 58

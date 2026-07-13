@@ -1,4 +1,5 @@
 import { Ruler } from "lucide-react";
+import { Helmet } from "react-helmet-async";
 import { Layout } from "@/components/layout/Layout";
 
 const sizes = [
@@ -21,7 +22,7 @@ const shoeSizes = [
 
 export default function GhidMarimi() {
   return (
-    <Layout>
+    <><Helmet><title>Ghid de Marimi | Anks Boutique</title><meta name="robots" content="noindex, follow" /></Helmet><Layout>
       <div className="container mx-auto px-4 py-16 max-w-4xl">
         {/* Header */}
         <div className="text-center mb-16">
@@ -141,6 +142,6 @@ export default function GhidMarimi() {
           </ul>
         </section>
       </div>
-    </Layout>
+    </Layout></>
   );
 }

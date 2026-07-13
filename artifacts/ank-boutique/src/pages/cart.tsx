@@ -1,4 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
+import { Helmet } from "react-helmet-async";
 import { useQueryClient } from "@tanstack/react-query";
 import { ShoppingBag, X, Plus, Minus } from "lucide-react";
 import { Link } from "wouter";
@@ -41,7 +42,7 @@ export default function Cart() {
   const isEmpty = !cart || cart.items.length === 0;
 
   return (
-    <Layout>
+    <><Helmet><title>Cosul Meu | Anks Boutique</title><meta name="robots" content="noindex, nofollow" /></Helmet><Layout>
       <div className="container mx-auto px-4 py-12 lg:py-20">
         <h1 className="text-3xl lg:text-4xl font-serif mb-12">Geanta Ta</h1>
 
@@ -93,6 +94,7 @@ export default function Cart() {
                           "https://images.unsplash.com/photo-1515347619253-12154d864197?q=80&w=200&auto=format&fit=crop"
                         }
                         alt={item.productTitle}
+                        loading="lazy"
                         className="w-28 h-36 object-cover bg-muted"
                       />
                     </Link>
@@ -183,6 +185,6 @@ export default function Cart() {
           </div>
         )}
       </div>
-    </Layout>
+    </Layout></>
   );
 }

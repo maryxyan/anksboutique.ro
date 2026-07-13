@@ -1,4 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
+import { Helmet } from "react-helmet-async";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -11,7 +12,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default function PoliticaConfidentialitate() {
   return (
-    <Layout>
+    <><Helmet><title>Politica de Confidentialitate | Anks Boutique</title><meta name="robots" content="noindex, follow" /></Helmet><Layout>
       <div className="container mx-auto px-4 py-16 max-w-3xl">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-serif mb-4">Politica de Confidențialitate</h1>
@@ -24,7 +25,7 @@ export default function PoliticaConfidentialitate() {
               <strong className="text-foreground">Ank's Boutique</strong> (denumit în continuare „Operatorul", „noi", „nouă") este operatorul datelor cu caracter personal colectate prin intermediul site-ului <strong className="text-foreground">anksboutique.ro</strong>.
             </p>
             <p>
-              Date de contact: <strong className="text-foreground">contact@anksboutique.ro</strong> · WhatsApp: <strong className="text-foreground">+40 700 000 000</strong>
+              Date de contact: <strong className="text-foreground">contact@anksboutique.ro</strong> · WhatsApp: <strong className="text-foreground">+40 720 180 186</strong>
             </p>
             <p>
               Prezenta politică este elaborată în conformitate cu <strong className="text-foreground">Regulamentul (UE) 2016/679 (GDPR)</strong> și cu legislația națională aplicabilă (Legea nr. 190/2018).
@@ -175,6 +176,6 @@ export default function PoliticaConfidentialitate() {
           </div>
         </div>
       </div>
-    </Layout>
+    </Layout></>
   );
 }

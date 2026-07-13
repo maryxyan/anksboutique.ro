@@ -1,5 +1,5 @@
 import { Router, type IRouter } from "express";
-import { eq, like, and, gte, lte, desc, sql, inArray } from "drizzle-orm";
+import { eq, like, ilike, or, and, gte, lte, desc, sql, inArray } from "drizzle-orm";
 import { db, productsTable, categoriesTable, reviewsTable } from "@workspace/db";
 import {
   ListProductsQueryParams,
@@ -10,8 +10,6 @@ import {
   UpdateProductBody,
 } from "@workspace/api-zod";
 
-const router: IRouter = Router();
-
 function buildProductResponse(product: any, category: any, reviewData: any) {
   return {
     id: product.id,
@@ -20,6 +18,7 @@ function buildProductResponse(product: any, category: any, reviewData: any) {
     price: parseFloat(product.price),
     comparePrice: product.comparePrice ? parseFloat(product.comparePrice) : null,
     images: product.images || [],
+    colorImages: product.colorImages || {},
     categoryId: product.categoryId,
     categoryName: category?.name ?? null,
     sizes: product.sizes || [],
@@ -34,6 +33,8 @@ function buildProductResponse(product: any, category: any, reviewData: any) {
   };
 }
 
+const router: IRouter = Router();
+
 router.get("/products", async (req, res): Promise<void> => {
   const parsed = ListProductsQueryParams.safeParse(req.query);
   if (!parsed.success) {
@@ -43,7 +44,17 @@ router.get("/products", async (req, res): Promise<void> => {
   const { category, search, badge, minPrice, maxPrice, inStock, sortBy, page = 1, limit = 20 } = parsed.data;
 
   const conditions: any[] = [eq(productsTable.active, true)];
-  if (search) conditions.push(like(productsTable.title, `%${search}%`));
+
+  if (search) {
+    conditions.push(
+      or(
+        ilike(productsTable.title, `%${search}%`),
+        ilike(productsTable.description, `%${search}%`),
+        ilike(productsTable.sku, `%${search}%`),
+        ilike(categoriesTable.name, `%${search}%`),
+      )
+    );
+  }
   if (badge) conditions.push(eq(productsTable.badge, badge));
   if (minPrice != null) conditions.push(gte(sql`${productsTable.price}::numeric`, minPrice));
   if (maxPrice != null) conditions.push(lte(sql`${productsTable.price}::numeric`, maxPrice));
@@ -95,9 +106,11 @@ router.get("/products", async (req, res): Promise<void> => {
 
   const products = filteredRows.map((r: any) => buildProductResponse(r.product, r.category, reviewMap[r.product.id]));
 
+
   const totalCount = await db
     .select({ count: sql<number>`count(*)` })
     .from(productsTable)
+    .leftJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id))
     .where(and(...conditions));
 
   res.json({

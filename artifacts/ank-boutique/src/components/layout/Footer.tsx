@@ -34,13 +34,11 @@ export function Footer() {
         <div className="space-y-4">
           <h4 className="text-sm font-semibold tracking-wider uppercase">Social</h4>
           <ul className="space-y-2 text-sm text-primary-foreground/70">
-            <li><a href="https://instagram.com/anksboutique" target="_blank" rel="noreferrer" className="hover:text-primary-foreground transition-colors">Instagram</a></li>
-            <li><a href="#" className="hover:text-primary-foreground transition-colors">Facebook</a></li>
-            <li><a href="#" className="hover:text-primary-foreground transition-colors">Pinterest</a></li>
+            <li><a href="https://www.instagram.com/anks_boutique?igsh=b2I4eG9iYWZhamxp" target="_blank" rel="noreferrer" className="hover:text-primary-foreground transition-colors">Instagram</a></li>
+            <li><a href="https://www.tiktok.com/@anks.boutique5?_r=1&_t=ZN-97eHB2Du8ak" target="_blank" rel="noreferrer" className="hover:text-primary-foreground transition-colors">TikTok</a></li>
           </ul>
         </div>
       </div>
-
       {/* ANPC & SOL compliance badges */}
       <div className="container mx-auto px-4 mt-12 pt-8 border-t border-primary-foreground/10">
         <p className="text-xs text-primary-foreground/40 uppercase tracking-widest mb-4">Soluționarea litigiilor</p>
@@ -91,6 +89,13 @@ export function Footer() {
               <span className="text-[9px] text-primary-foreground/50 mt-0.5 leading-tight">Soluționarea Online<br />a Litigiilor</span>
             </div>
           </a>
+
+          {/* bg-black.png badge */}
+          <img
+            src="/bg-black.png"
+            alt="Ank's Boutique"
+            className="h-auto w-auto max-h-16 ml-auto opacity-90 hover:opacity-100 transition-opacity"
+          />
         </div>
         <p className="text-[10px] text-primary-foreground/35 mt-3 leading-relaxed max-w-lg">
           Conform OUG 34/2014 și Regulamentului (UE) nr. 524/2013, consumatorii pot apela la proceduri de soluționare alternativă a litigiilor prin ANPC sau platforma SOL a Comisiei Europene.

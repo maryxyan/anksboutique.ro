@@ -15,6 +15,8 @@ export interface Product {
   /** @nullable */
   comparePrice?: number | null;
   images: string[];
+  /** @nullable */
+  colorImages?: Record<string, string[]> | null;
   categoryId: number;
   /** @nullable */
   categoryName?: string | null;

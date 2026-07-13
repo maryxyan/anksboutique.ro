@@ -1,3 +1,4 @@
+import { Helmet } from "react-helmet-async";
 import { Layout } from "@/components/layout/Layout";
 import { useState, useEffect, useRef } from "react";
 import { useGetCart, getGetCartQueryKey, useCreateOrder } from "@workspace/api-client-react";
@@ -118,9 +119,14 @@ export default function Checkout() {
   }
 
   return (
-    <Layout>
-      <div className="container mx-auto px-4 py-12 lg:py-20">
-        <h1 className="text-3xl lg:text-4xl font-serif mb-12">Finalizare Comandă</h1>
+    <>
+      <Helmet>
+        <title>Finalizare Comandă | Anks Boutique</title>
+        <meta name="robots" content="noindex, nofollow" />
+      </Helmet>
+      <Layout>
+        <div className="container mx-auto px-4 py-12 lg:py-20">
+          <h1 className="text-3xl lg:text-4xl font-serif mb-12">Finalizare Comandă</h1>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Form */}
@@ -245,6 +251,7 @@ export default function Checkout() {
                     <img
                       src={item.productImage || "https://images.unsplash.com/photo-1515347619253-12154d864197?q=80&w=100&auto=format&fit=crop"}
                       alt={item.productTitle}
+                      loading="lazy"
                       className="w-16 h-20 object-cover bg-background shrink-0"
                     />
                     <div className="flex-1">
@@ -270,7 +277,7 @@ export default function Checkout() {
           </div>
         </div>
       </div>
-    </Layout>
+    </Layout></>
   );
 }
 

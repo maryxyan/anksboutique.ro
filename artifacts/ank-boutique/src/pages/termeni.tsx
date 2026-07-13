@@ -1,4 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
+import { Helmet } from "react-helmet-async";
 import { Link } from "wouter";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
@@ -12,7 +13,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 
 export default function TermeniConditii() {
   return (
-    <Layout>
+    <><Helmet><title>Termeni si Conditii | Anks Boutique</title><meta name="robots" content="noindex, follow" /></Helmet><Layout>
       <div className="container mx-auto px-4 py-16 max-w-3xl">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-serif mb-4">Termeni și Condiții</h1>
@@ -30,7 +31,7 @@ export default function TermeniConditii() {
             </p>
             <ul className="list-none space-y-1 mt-2">
               <li><strong className="text-foreground">Email:</strong> contact@anksboutique.ro</li>
-              <li><strong className="text-foreground">WhatsApp:</strong> +40 700 000 000</li>
+              <li><strong className="text-foreground">WhatsApp:</strong> +40 720 180 186</li>
               <li><strong className="text-foreground">Instagram:</strong> @anksboutique</li>
             </ul>
             <p>Prezentele condiții sunt guvernate de legislația română, în special de:</p>
@@ -166,6 +167,6 @@ export default function TermeniConditii() {
           </div>
         </div>
       </div>
-    </Layout>
+    </Layout></>
   );
 }

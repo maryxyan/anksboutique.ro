@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation } from "wouter";
-import { LayoutDashboard, Package, ShoppingBag, Archive, LogOut, Menu, X } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingBag, Archive, Tag, LogOut, Menu, X } from "lucide-react";
 
 const NAV = [
   { href: "/admin", label: "Panou de Control", icon: LayoutDashboard },
   { href: "/admin/products", label: "Produse", icon: Package },
   { href: "/admin/orders", label: "Comenzi", icon: ShoppingBag },
+  { href: "/admin/categories", label: "Categorii", icon: Tag },
   { href: "/admin/inventory", label: "Inventar", icon: Archive },
 ];
 

@@ -45,6 +45,7 @@ export function ProductCard({ product }: { product: Product }) {
         <img 
           src={isHovered ? hoverImage : image} 
           alt={product.title}
+          loading="lazy"
           className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-105"
         />
         

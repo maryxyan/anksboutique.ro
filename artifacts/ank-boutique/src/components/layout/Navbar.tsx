@@ -1,5 +1,5 @@
 import { Link, useLocation } from "wouter";
-import { ShoppingBag, Heart, Menu, Search, User, X } from "lucide-react";
+import { ShoppingBag, Heart, Menu, Search, User, X, LogIn, UserPlus } from "lucide-react";
 import { useGetCart, getGetCartQueryKey } from "@workspace/api-client-react";
 import { useSessionId } from "@/hooks/use-session";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,9 @@ export function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [query, setQuery] = useState("");
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   const { data: cart } = useGetCart(
     { sessionId },
@@ -20,6 +22,11 @@ export function Navbar() {
   );
 
   const itemCount = cart?.itemCount || 0;
+
+  // Check if client is authenticated
+  const isClientAuth = typeof window !== "undefined" && localStorage.getItem("clientAuthenticated") === "true";
+  const clientUser = typeof window !== "undefined" && localStorage.getItem("client_user");
+  const clientName = clientUser ? JSON.parse(clientUser).name : null;
 
   const openSearch = useCallback(() => {
     setMenuOpen(false);
@@ -44,9 +51,21 @@ export function Navbar() {
     if (e.key === "Escape") closeSearch();
   };
 
+  // Close user menu on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (userMenuRef.current && !userMenuRef.current.contains(e.target as Node)) {
+        setUserMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   useEffect(() => {
     closeSearch();
     setMenuOpen(false);
+    setUserMenuOpen(false);
   }, [location]);
 
   const navLinks = [
@@ -149,9 +168,82 @@ export function Navbar() {
                 <Search className="w-5 h-5" />
               </button>
             </div>
-            <Link href="/admin" className="p-2 hover:text-primary/70 transition-colors">
-              <User className="w-5 h-5" />
-            </Link>
+
+            {/* User dropdown */}
+            <div className="relative" ref={userMenuRef}>
+              <button
+                className="p-2 hover:text-primary/70 transition-colors relative"
+                aria-label="Contul meu"
+                onClick={() => setUserMenuOpen((o) => !o)}
+                onMouseEnter={() => setUserMenuOpen(true)}
+              >
+                <User className="w-5 h-5" />
+                {isClientAuth && (
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-green-500 rounded-full" />
+                )}
+              </button>
+
+              <AnimatePresence>
+                {userMenuOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -8 }}
+                    transition={{ duration: 0.15 }}
+                    className="absolute right-0 top-full mt-1 w-56 bg-background border border-border shadow-lg z-50"
+                    onMouseLeave={() => setUserMenuOpen(false)}
+                  >
+                    {isClientAuth ? (
+                      <>
+                        <div className="px-4 py-3 border-b border-border/40">
+                          <p className="text-xs font-medium truncate">{clientName}</p>
+                          <p className="text-[10px] text-muted-foreground truncate">Cont client</p>
+                        </div>
+                        <Link
+                          href="/account"
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          <User className="w-4 h-4" /> Contul Meu
+                        </Link>
+                        <button
+                          onClick={() => {
+                            localStorage.removeItem("clientAuthenticated");
+                            localStorage.removeItem("client_user");
+                            setUserMenuOpen(false);
+                            navigate("/");
+                          }}
+                          className="w-full flex items-center gap-3 px-4 py-2.5 text-sm text-muted-foreground hover:bg-muted transition-colors"
+                        >
+                          <LogIn className="w-4 h-4 rotate-180" /> Deconectare
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <div className="px-4 py-3 border-b border-border/40">
+                          <p className="text-xs font-medium">Cont Client</p>
+                          <p className="text-[10px] text-muted-foreground">Autentifică-te sau înregistrează-te</p>
+                        </div>
+                        <Link
+                          href="/login"
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          <LogIn className="w-4 h-4" /> Autentificare
+                        </Link>
+                        <Link
+                          href="/register"
+                          className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-muted transition-colors"
+                          onClick={() => setUserMenuOpen(false)}
+                        >
+                          <UserPlus className="w-4 h-4" /> Înregistrare
+                        </Link>
+                      </>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
 
           <Link href="/wishlist" className="p-2 hover:text-primary/70 transition-colors hidden sm:block">
@@ -201,9 +293,20 @@ export function Navbar() {
                 <Link href="/wishlist" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
                   <Heart className="w-4 h-4" /> Favorite
                 </Link>
-                <Link href="/admin" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
-                  <User className="w-4 h-4" /> Admin
-                </Link>
+                {isClientAuth ? (
+                  <Link href="/account" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                    <User className="w-4 h-4" /> Contul Meu
+                  </Link>
+                ) : (
+                  <>
+                    <Link href="/login" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                      <LogIn className="w-4 h-4" /> Autentificare
+                    </Link>
+                    <Link href="/register" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+                      <UserPlus className="w-4 h-4" /> Înregistrare
+                    </Link>
+                  </>
+                )}
               </div>
             </nav>
           </motion.div>

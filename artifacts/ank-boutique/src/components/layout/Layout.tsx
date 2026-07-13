@@ -4,10 +4,16 @@ import { Link, useLocation } from "wouter";
 import { Home, ShoppingBag, Heart, Search } from "lucide-react";
 import { useGetCart, getGetCartQueryKey } from "@workspace/api-client-react";
 import { useSessionId } from "@/hooks/use-session";
+import { useEffect } from "react";
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const [location] = useLocation();
   const sessionId = useSessionId();
+
+  // Scroll to top on route change
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location]);
   
   const { data: cart } = useGetCart(
     { sessionId },
@@ -53,7 +59,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       {/* WhatsApp Floating Button */}
       <a 
-        href="https://wa.me/40700000000" 
+        href="https://wa.me/40720180186" 
         target="_blank" 
         rel="noreferrer"
         className="fixed bottom-20 lg:bottom-6 right-6 z-50 bg-[#25D366] text-white p-3.5 rounded-full shadow-lg hover:scale-110 transition-transform flex items-center justify-center"

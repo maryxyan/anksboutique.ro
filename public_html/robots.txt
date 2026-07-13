@@ -1,0 +1,27 @@
+User-agent: *
+Allow: /
+Allow: /shop
+Allow: /product/
+Allow: /contact
+Allow: /retur
+Allow: /livrare
+Allow: /faq
+Allow: /ghid-marimi
+Allow: /confidentialitate
+Allow: /termeni
+
+Disallow: /cart
+Disallow: /checkout
+Disallow: /wishlist
+Disallow: /account
+Disallow: /account/*
+Disallow: /admin
+Disallow: /admin/*
+Disallow: /login
+Disallow: /register
+Disallow: /forgot-password
+Disallow: /reset-password
+Disallow: /api/
+Disallow: /assets/
+
+Sitemap: https://anksboutique.ro/api/sitemap.xml

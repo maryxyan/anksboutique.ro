@@ -1,4 +1,5 @@
 import { Layout } from "@/components/layout/Layout";
+import { Helmet } from "react-helmet-async";
 import { useState } from "react";
 import { Instagram, MessageCircle, Mail, MapPin, Check } from "lucide-react";
 import { motion } from "framer-motion";
@@ -13,7 +14,7 @@ export default function Contact() {
   };
 
   return (
-    <Layout>
+    <><Helmet><title>Contact | Anks Boutique</title><meta name="description" content="Contacteaza-ne. Program: L-V 10:00-18:00. Email: contact@anksboutique.ro." /><meta property="og:title" content="Contact | Anks Boutique" /></Helmet><Layout>
       <div className="container mx-auto px-4 py-12 lg:py-20">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-16">
@@ -27,7 +28,7 @@ export default function Contact() {
             {/* Contact Methods */}
             <div className="space-y-8">
               <a
-                href="https://wa.me/40700000000"
+                href="https://wa.me/40720180186"
                 target="_blank"
                 rel="noreferrer"
                 className="flex items-start gap-5 group p-6 border border-border hover:border-foreground transition-colors"
@@ -45,7 +46,7 @@ export default function Contact() {
               </a>
 
               <a
-                href="https://instagram.com/anksboutique"
+                href="https://www.instagram.com/anks_boutique?igsh=b2I4eG9iYWZhamxp"
                 target="_blank"
                 rel="noreferrer"
                 className="flex items-start gap-5 group p-6 border border-border hover:border-foreground transition-colors"
@@ -57,7 +58,7 @@ export default function Contact() {
                   <h3 className="font-medium mb-1">Instagram</h3>
                   <p className="text-sm text-muted-foreground">Urmărește-ne pentru inspirație zilnică, culise și noutăți. DM-urile sunt binevenite.</p>
                   <span className="text-sm border-b border-foreground pb-0.5 mt-3 inline-block group-hover:text-muted-foreground transition-colors uppercase tracking-widest text-xs font-medium">
-                    @anksboutique
+                    @anks_boutique
                   </span>
                 </div>
               </a>
@@ -154,6 +155,6 @@ export default function Contact() {
           </div>
         </div>
       </div>
-    </Layout>
+    </Layout></>
   );
 }
