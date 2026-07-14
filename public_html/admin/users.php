@@ -1,11 +1,13 @@
 <?php
 $pageTitle = 'Admin - Utilizatori';
 require_once __DIR__ . '/../includes/header.php';
+require_once __DIR__ . '/../includes/admin-utils.php';
 requireAdmin();
 
 $db = getDB();
 $users = $db->query("SELECT id, email, first_name, last_name, phone, is_admin, created_at FROM users ORDER BY created_at DESC");
 ?>
+
 
 <div class="admin-layout">
     <aside class="admin-sidebar">

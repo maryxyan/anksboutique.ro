@@ -3,8 +3,9 @@ require_once __DIR__ . '/../config.php';
 require_once __DIR__ . '/database.php';
 require_once __DIR__ . '/functions.php';
 
-// Initialize database on first run
+// Initialize DB schema+seed (idempotent via marker in database.php)
 initializeDatabase();
+
 
 // Start session
 if (session_status() === PHP_SESSION_NONE) {

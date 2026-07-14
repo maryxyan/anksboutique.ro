@@ -1,6 +1,7 @@
 <?php
 $pageTitle = 'Admin - Comenzi';
 require_once __DIR__ . '/../includes/header.php';
+require_once __DIR__ . '/../includes/admin-utils.php';
 requireAdmin();
 
 db_error_reporting: '';
@@ -9,11 +10,11 @@ $message = getFlash('success');
 $statusFilter = $_GET['status'] ?? '';
 
 // Handle status update (POST + CSRF)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_status') {
-    requireCsrfToken();
+if (admin_require_post_action('update_status')) {
+    admin_csrf_or_forbidden();
 
-    $newStatus = $_POST['update_status'] ?? '';
-    $orderId = (int)($_POST['id'] ?? 0);
+    $newStatus = admin_post_string('update_status', '');
+    $orderId = admin_post_int('id', 0);
 
     $allowedStatuses = ['pending', 'confirmed', 'shipped', 'delivered', 'cancelled'];
 
@@ -27,6 +28,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 
     redirect('/admin/orders.php');
 }
+
 
 // Build query
 $where = '';

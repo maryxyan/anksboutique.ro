@@ -1,6 +1,7 @@
 <?php
 $pageTitle = 'Admin - Produse';
 require_once __DIR__ . '/../includes/header.php';
+require_once __DIR__ . '/../includes/admin-utils.php';
 requireAdmin();
 
 $db = getDB();
@@ -8,26 +9,25 @@ $message = getFlash('success');
 $error = getFlash('error');
 
 // Handle delete (POST + CSRF)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete_product') {
-    requireCsrfToken();
+if (admin_require_post_action('delete_product')) {
+    admin_csrf_or_forbidden();
 
-    $id = (int)($_POST['id'] ?? 0);
+    $id = admin_post_int('id', 0);
     if ($id > 0) {
         $stmt = $db->prepare("DELETE FROM products WHERE id = ?");
         $stmt->bindValue(1, $id, SQLITE3_INTEGER);
         $stmt->execute();
     }
 
-    setFlash('Produsul a fost șters.', 'success');
-    redirect('/admin/products.php');
+    admin_set_flash_and_redirect('/admin/products.php', 'Produsul a fost șters.', 'success');
 }
 
 // Handle delete color variant image (POST + CSRF)
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'delete_color') {
-    requireCsrfToken();
+if (admin_require_post_action('delete_color')) {
+    admin_csrf_or_forbidden();
 
-    $colorId = (int)($_POST['delete_color'] ?? 0);
-    $productId = (int)($_POST['product_id'] ?? 0);
+    $colorId = admin_post_int('delete_color', 0);
+    $productId = admin_post_int('product_id', 0);
 
     if ($colorId > 0 && $productId > 0) {
         $stmt = $db->prepare("DELETE FROM product_variant_images WHERE id = ? AND product_id = ?");
@@ -36,49 +36,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $stmt->execute();
     }
 
-    setFlash('Imaginea pentru culoare a fost ștearsă.', 'success');
-    redirect('/admin/products.php?edit=' . $productId);
+    admin_set_flash_and_redirect('/admin/products.php?edit=' . $productId, 'Imaginea pentru culoare a fost ștearsă.', 'success');
 }
 
-
 // Handle add/edit form submission
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
-    requireCsrfToken();
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && !empty($_POST['action'])) {
+    admin_csrf_or_forbidden();
 
-    $name = trim($_POST['name'] ?? '');
-    $category_id = (int)($_POST['category_id'] ?? 0);
-    $description = trim($_POST['description'] ?? '');
+    $name = trim(admin_post_string('name', ''));
+    $category_id = admin_post_int('category_id', 0);
+    $description = trim(admin_post_string('description', ''));
     $price = (float)($_POST['price'] ?? 0);
     $compare_price = (float)($_POST['compare_price'] ?? 0);
-    $stock = (int)($_POST['stock'] ?? 0);
+    $stock = admin_post_int('stock', 0);
     $featured = isset($_POST['featured']) ? 1 : 0;
     $slug = slugify($name);
-    
+
     // Handle file upload for image_url
-    $image_url = trim($_POST['image_url'] ?? '');
+    $image_url = trim(admin_post_string('image_url', ''));
     if (isset($_FILES['image_file']) && $_FILES['image_file']['error'] === UPLOAD_ERR_OK) {
         $uploaded = handleImageUpload($_FILES['image_file']);
         if ($uploaded) {
             $image_url = $uploaded;
         }
     }
-    
+
     // Handle file upload for image_url_2
-    $image_url_2 = trim($_POST['image_url_2'] ?? '');
+    $image_url_2 = trim(admin_post_string('image_url_2', ''));
     if (isset($_FILES['image_file_2']) && $_FILES['image_file_2']['error'] === UPLOAD_ERR_OK) {
         $uploaded = handleImageUpload($_FILES['image_file_2']);
         if ($uploaded) {
             $image_url_2 = $uploaded;
         }
     }
-    
-    if ($_POST['action'] === 'edit' && isset($_POST['id'])) {
-        $id = (int)$_POST['id'];
+
+    $action = (string)$_POST['action'];
+
+    if ($action === 'edit' && isset($_POST['id'])) {
+        $id = admin_post_int('id', 0);
         $stmt = $db->prepare("UPDATE products SET name=?, slug=?, category_id=?, description=?, price=?, compare_price=?, image_url=?, image_url_2=?, stock=?, featured=? WHERE id=?");
         $stmt->bindValue(11, $id, SQLITE3_INTEGER);
     } else {
         $stmt = $db->prepare("INSERT INTO products (name, slug, category_id, description, price, compare_price, image_url, image_url_2, stock, featured, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'active')");
     }
+
     $stmt->bindValue(1, $name, SQLITE3_TEXT);
     $stmt->bindValue(2, $slug, SQLITE3_TEXT);
     $stmt->bindValue(3, $category_id ?: null, SQLITE3_INTEGER);
@@ -90,38 +91,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $stmt->bindValue(9, $stock, SQLITE3_INTEGER);
     $stmt->bindValue(10, $featured, SQLITE3_INTEGER);
     $stmt->execute();
-    
+
     // If adding new product, get the new ID
-    if ($_POST['action'] !== 'edit') {
+    if ($action !== 'edit') {
         $id = $db->lastInsertRowID();
     }
-    
-    setFlash('Produs salvat cu succes.', 'success');
-    redirect('/admin/products.php' . ($_POST['action'] === 'edit' ? '?edit=' . $id : ''));
+
+    admin_set_flash_and_redirect('/admin/products.php' . ($action === 'edit' ? '?edit=' . $id : ''), 'Produs salvat cu succes.', 'success');
 }
 
 // Handle add color variant image
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'add_color') {
-    requireCsrfToken();
+if (admin_require_post_action('add_color')) {
+    admin_csrf_or_forbidden();
 
-    $productId = (int)($_POST['product_id'] ?? 0);
-    $colorName = trim($_POST['color_name'] ?? '');
+    $productId = admin_post_int('product_id', 0);
+    $colorName = trim(admin_post_string('color_name', ''));
     // Support both URL and file upload for color image
-    $imageUrl = trim($_POST['image_url'] ?? '');
+    $imageUrl = trim(admin_post_string('image_url', ''));
     if (isset($_FILES['color_image_file']) && $_FILES['color_image_file']['error'] === UPLOAD_ERR_OK) {
         $uploaded = handleImageUpload($_FILES['color_image_file']);
         if ($uploaded) {
             $imageUrl = $uploaded;
         }
     }
-    
+
     if ($productId && $colorName && $imageUrl) {
         // Check if this color already exists for this product
         $stmt = $db->prepare("SELECT COUNT(*) as count FROM product_variant_images WHERE product_id = ? AND color_name = ?");
         $stmt->bindValue(1, $productId, SQLITE3_INTEGER);
         $stmt->bindValue(2, $colorName, SQLITE3_TEXT);
         $existing = $stmt->execute()->fetchArray(SQLITE3_ASSOC);
-        
+
         if ($existing['count'] > 0) {
             $error = 'Culoarea "' . escape($colorName) . '" există deja pentru acest produs.';
         } else {
@@ -129,21 +129,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $stmt = $db->prepare("SELECT COALESCE(MAX(sort_order), -1) + 1 as next_sort FROM product_variant_images WHERE product_id = ?");
             $stmt->bindValue(1, $productId, SQLITE3_INTEGER);
             $nextSort = $stmt->execute()->fetchArray(SQLITE3_ASSOC)['next_sort'];
-            
+
             $stmt = $db->prepare("INSERT INTO product_variant_images (product_id, color_name, image_url, sort_order) VALUES (?, ?, ?, ?)");
             $stmt->bindValue(1, $productId, SQLITE3_INTEGER);
             $stmt->bindValue(2, $colorName, SQLITE3_TEXT);
             $stmt->bindValue(3, $imageUrl, SQLITE3_TEXT);
             $stmt->bindValue(4, $nextSort, SQLITE3_INTEGER);
             $stmt->execute();
-            
-            setFlash('Imaginea pentru culoare "' . escape($colorName) . '" a fost adăugată.', 'success');
-            redirect('/admin/products.php?edit=' . $productId);
+
+            admin_set_flash_and_redirect('/admin/products.php?edit=' . $productId, 'Imaginea pentru culoare "' . escape($colorName) . '" a fost adăugată.', 'success');
         }
     } else {
         $error = 'Toate câmpurile pentru culoare sunt obligatorii.';
     }
 }
+
 
 // Get edit product
 $editProduct = null;
