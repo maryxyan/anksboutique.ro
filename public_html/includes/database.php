@@ -25,8 +25,24 @@ function getDB() {
 
 function initializeDatabase() {
     $db = getDB();
-    
+
+    // Fast idempotency guard: avoid re-running schema+seeding checks on every request.
+    // If the schema marker exists, assume initialization already happened.
+    $marker = 'schema_initialized';
+    $chk = $db->prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='app_meta'");
+    $hasMeta = $chk->execute()->fetchArray(SQLITE3_ASSOC);
+
+    if ($hasMeta) {
+        $stmt = $db->prepare("SELECT 1 FROM app_meta WHERE key = ? LIMIT 1");
+        $stmt->bindValue(1, $marker, SQLITE3_TEXT);
+        $res = $stmt->execute()->fetchArray(SQLITE3_ASSOC);
+        if ($res) {
+            return;
+        }
+    }
+
     // Create tables
+
     $db->exec("
         CREATE TABLE IF NOT EXISTS categories (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -189,9 +205,14 @@ function initializeDatabase() {
         }
     }
     
+    // Create app_meta marker table (used to avoid re-running init/seeding)
+    $db->exec("CREATE TABLE IF NOT EXISTS app_meta (key TEXT PRIMARY KEY, value TEXT);");
+    $db->exec("INSERT OR IGNORE INTO app_meta (key, value) VALUES ('schema_initialized', '1');");
+
     // Insert sample products if not exists
     $count = $db->querySingle("SELECT COUNT(*) FROM products");
     if ($count == 0) {
+
         $products = [
             [1, 'Elegant Silk Blouse', 'elegant-silk-blouse', 'A beautiful silk blouse perfect for any occasion. Made from 100% premium silk with a relaxed fit.', 249.99, 329.99, 25, 1, 1],
             [1, 'Floral Summer Dress', 'floral-summer-dress', 'Light and airy summer dress with a beautiful floral pattern. Perfect for warm days.', 199.99, 279.99, 30, 1, 1],
