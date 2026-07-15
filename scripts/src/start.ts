@@ -1,11 +1,27 @@
 import { spawn, execSync, ChildProcess } from 'child_process';
+import * as fs from 'fs';
 import * as path from 'path';
 import * as readline from 'readline';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const projectRoot = path.resolve(__dirname, '../../..');
+
+function normalizeWorktreeRoot(rootPath: string): string {
+  const parts = rootPath.split(path.sep);
+  const worktreeIndex = parts.findIndex((part) => part.endsWith('.worktrees'));
+  if (worktreeIndex === -1) {
+    return rootPath;
+  }
+
+  const rootName = parts[worktreeIndex].replace(/\.worktrees$/, '');
+  const parentParts = parts.slice(0, worktreeIndex);
+  const candidate = path.join(...parentParts, rootName);
+  return fs.existsSync(candidate) ? candidate : rootPath;
+}
+
+const candidateRoot = process.env.INIT_CWD ? path.resolve(process.env.INIT_CWD) : path.resolve(__dirname, '../../..');
+const projectRoot = normalizeWorktreeRoot(candidateRoot);
 const pgDataDir = process.env.PGDATA || 'C:\\Program Files\\PostgreSQL\\18\\data';
 
 function spawnProcess(name: string, command: string, args: string[], env: Record<string, string>): ChildProcess {
@@ -63,7 +79,7 @@ async function main() {
   const apiProcess = spawnProcess(
     'API-Server',
     'pnpm',
-    ['--filter', '@workspace/api-server', 'run', 'dev'],
+    ['--dir', projectRoot, '--filter', '@workspace/api-server', 'run', 'dev'],
     {
       DATABASE_URL: 'postgresql://anksboutique:password123@localhost:5432/anksboutique',
       PORT: '8080',
@@ -78,7 +94,7 @@ async function main() {
   const frontProcess = spawnProcess(
     'Frontend',
     'pnpm',
-    ['--filter', '@workspace/ank-boutique', 'run', 'dev'],
+    ['--dir', projectRoot, '--filter', '@workspace/ank-boutique', 'run', 'dev'],
     {
       PORT: '5173',
       BASE_PATH: '/'

@@ -209,6 +209,20 @@ function initializeDatabase() {
     $db->exec("CREATE TABLE IF NOT EXISTS app_meta (key TEXT PRIMARY KEY, value TEXT);");
     $db->exec("INSERT OR IGNORE INTO app_meta (key, value) VALUES ('schema_initialized', '1');");
 
+    // Labels/tags
+    $db->exec("
+        CREATE TABLE IF NOT EXISTS labels (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL UNIQUE,
+            slug TEXT NOT NULL UNIQUE,
+            description TEXT,
+            sort_order INTEGER DEFAULT 0,
+            status TEXT DEFAULT 'active',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        )
+    ");
+
+
     // Insert sample products if not exists
     $count = $db->querySingle("SELECT COUNT(*) FROM products");
     if ($count == 0) {

@@ -22,8 +22,13 @@ $apiJob = Start-Job -Name "API-Server" -ScriptBlock {
     $env:DATABASE_URL = $using:DATABASE_URL
     $env:PORT         = $using:PORT
     $env:NODE_ENV     = "development"
+
+    # Ensure deps exist inside the workspace before running build/start.
+    pnpm -r --filter @workspace/api-server install --frozen-lockfile
+
     pnpm --filter @workspace/api-server run dev
 } -ArgumentList $ProjectRoot
+
 
 Start-Sleep -Seconds 5
 
