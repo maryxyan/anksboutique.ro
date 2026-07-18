@@ -11,6 +11,7 @@ import adminRouter from "./admin";
 import uploadRouter from "./upload";
 import sitemapRouter from "./sitemap";
 import accountRouter from "./account";
+import labelsRouter from "./labels";
 
 const router: IRouter = Router();
 
@@ -26,5 +27,6 @@ router.use(adminRouter);
 router.use(uploadRouter);
 router.use(sitemapRouter);
 router.use(accountRouter);
+router.use(labelsRouter);
 
 export default router;

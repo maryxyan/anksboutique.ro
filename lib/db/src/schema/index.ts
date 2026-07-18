@@ -6,3 +6,4 @@ export * from "./wishlist";
 export * from "./reviews";
 export * from "./newsletter";
 export * from "./returns";
+export * from "./labels";

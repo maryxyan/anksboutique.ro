@@ -1,4 +1,4 @@
-import { db, categoriesTable, productsTable } from "./index.js";
+import { db, categoriesTable, labelsTable, productsTable } from "./index.js";
 
 const cats = [
   { name: "Dresses", slug: "dresses", description: "Elegant dresses for every occasion" },
@@ -8,11 +8,24 @@ const cats = [
   { name: "Bags", slug: "bags", description: "Handbags and clutches" },
 ];
 
+const labels = [
+  { name: "New", slug: "new", description: "Etichetă pentru produse noi", sortOrder: 1, status: "active" },
+  { name: "Best Seller", slug: "best-seller", description: "Cele mai vândute produse", sortOrder: 2, status: "active" },
+  { name: "Limited", slug: "limited", description: "Colecție limitată", sortOrder: 3, status: "active" },
+];
+
 for (const cat of cats) {
   try {
     await db.insert(categoriesTable).values(cat).onConflictDoUpdate({ target: categoriesTable.slug, set: { name: cat.name } });
     console.log("Cat OK:", cat.name);
   } catch (e: any) { console.log("Cat ERR:", cat.name, String(e).substring(0, 100)); }
+}
+
+for (const label of labels) {
+  try {
+    await db.insert(labelsTable).values(label).onConflictDoNothing();
+    console.log("Label OK:", label.name);
+  } catch (e: any) { console.log("Label ERR:", label.name, String(e).substring(0, 100)); }
 }
 
 const allCats = await db.select().from(categoriesTable);
