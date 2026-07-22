@@ -49,12 +49,37 @@ function slugify(text: string) {
     .replace(/^-+|-+$/g, "");
 }
 
-function getColorHex(colorName: string): string {
-  return COLORS.find((c) => c.name === colorName)?.hex || "#ccc";
+function getColorHex(colorName: string, customColors: { name: string; hex: string }[] = []): string {
+  return COLORS.find((c) => c.name === colorName)?.hex || getCustomColorHex(colorName, customColors) || "#ccc";
 }
 
 function isLightColor(colorName: string): boolean {
   return ["White", "Ivory", "Beige", "Blush", "Yellow", "Mint"].includes(colorName);
+}
+
+function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
+  const clean = hex.replace("#", "");
+  if (clean.length !== 6) return null;
+  const r = parseInt(clean.substring(0, 2), 16);
+  const g = parseInt(clean.substring(2, 4), 16);
+  const b = parseInt(clean.substring(4, 6), 16);
+  if (isNaN(r) || isNaN(g) || isNaN(b)) return null;
+  return { r, g, b };
+}
+
+function isLightHex(hex: string): boolean {
+  const rgb = hexToRgb(hex);
+  if (!rgb) return false;
+  // Relative luminance (sRGB)
+  const luminance = 0.299 * rgb.r + 0.587 * rgb.g + 0.114 * rgb.b;
+  return luminance > 186;
+}
+
+function getCustomColorHex(
+  colorName: string,
+  customColors: { name: string; hex: string }[]
+): string | undefined {
+  return customColors.find((c) => c.name === colorName)?.hex;
 }
 
 export default function AdminProductEdit() {
@@ -95,6 +120,12 @@ export default function AdminProductEdit() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [activeColorForImage, setActiveColorForImage] = useState<string | null>(null);
 
+  // Custom color state
+  const [customColors, setCustomColors] = useState<{ name: string; hex: string }[]>([]);
+  const [showCustomColorForm, setShowCustomColorForm] = useState(false);
+  const [customColorName, setCustomColorName] = useState("");
+  const [customColorHex, setCustomColorHex] = useState("#E91E8C");
+
   // Category creation state
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [newCatName, setNewCatName] = useState("");
@@ -102,6 +133,31 @@ export default function AdminProductEdit() {
 
   useEffect(() => {
     if (product && !isNew) {
+      // Restore custom colors from persisted storage metadata
+      const restoredCustomColors: { name: string; hex: string }[] = [];
+      const rawCustomColors = (product as any).colorImages?.__custom_colors__;
+      if (rawCustomColors) {
+        try {
+          const parsed = JSON.parse(rawCustomColors);
+          if (Array.isArray(parsed)) restoredCustomColors.push(...parsed);
+        } catch {}
+      }
+
+      // Detect colors not in the predefined COLORS list and add them as custom
+      const predefinedNames = COLORS.map((c) => c.name);
+      for (const colorName of product.colors || []) {
+        if (!predefinedNames.includes(colorName)) {
+          const existing = restoredCustomColors.find((c) => c.name === colorName);
+          if (!existing) {
+            restoredCustomColors.push({ name: colorName, hex: "#cccccc" });
+          }
+        }
+      }
+      setCustomColors(restoredCustomColors);
+
+      // Clean the reserved key from colorImages for the form
+      const { __custom_colors__, ...cleanColorImages } = (product as any).colorImages || {};
+
       setForm({
         title: product.title || "",
         description: product.description || "",
@@ -114,7 +170,7 @@ export default function AdminProductEdit() {
         badge: product.badge || "",
         sku: product.sku || "",
         images: product.images || [],
-        colorImages: (product as any).colorImages || {},
+        colorImages: cleanColorImages,
       });
     }
   }, [product, isNew]);
@@ -236,6 +292,12 @@ export default function AdminProductEdit() {
     e.preventDefault();
     if (!validate()) return;
 
+    // Persist custom color definitions in colorImages under a reserved key
+    const colorImagesWithCustom = {
+      ...form.colorImages,
+      ...(customColors.length > 0 ? { __custom_colors__: JSON.stringify(customColors) } : {}),
+    };
+
     const payload = {
       title: form.title,
       description: form.description || undefined,
@@ -248,7 +310,7 @@ export default function AdminProductEdit() {
       badge: form.badge || undefined,
       sku: form.sku || undefined,
       images: form.images,
-      colorImages: form.colorImages,
+      colorImages: colorImagesWithCustom,
     };
 
     if (isNew) {
@@ -306,7 +368,8 @@ export default function AdminProductEdit() {
   };
 
   // ---- Compute selected color data for the color images section ----
-  const selectedColors = COLORS.filter((c) => form.colors.includes(c.name));
+  const allColorPalette = [...COLORS, ...customColors];
+  const selectedColors = allColorPalette.filter((c) => form.colors.includes(c.name));
 
   return (
     <AdminLayout>
@@ -465,12 +528,14 @@ export default function AdminProductEdit() {
                 <div className="space-y-6">
                   {selectedColors.map(({ name, hex }) => {
                     const colorImgs = form.colorImages[name] || [];
+                    const colorIsCustom = customColors.some((c) => c.name === name);
+                    const colorIsLight = colorIsCustom ? isLightHex(hex) : isLightColor(name);
                     return (
                       <div key={name} className="border border-border p-4">
                         <div className="flex items-center gap-3 mb-3">
                           <div
                             className="w-6 h-6 rounded-full border"
-                            style={{ backgroundColor: hex, borderColor: isLightColor(name) ? "#ccc" : hex }}
+                            style={{ backgroundColor: hex, borderColor: colorIsLight ? "#ccc" : hex }}
                           />
                           <span className="text-sm font-medium">{name}</span>
                           <span className="text-xs text-muted-foreground">
@@ -629,34 +694,121 @@ export default function AdminProductEdit() {
             <div className="bg-background border border-border p-6">
               <h2 className="text-xs uppercase tracking-widest font-medium text-muted-foreground mb-4">Culori</h2>
               <div className="flex flex-wrap gap-2">
-                {COLORS.map(({ name, hex }) => {
+                {allColorPalette.map(({ name, hex }) => {
                   const selected = form.colors.includes(name);
-                  const light = isLightColor(name);
+                  const isCustom = customColors.some((c) => c.name === name);
+                  const light = isCustom ? isLightHex(hex) : isLightColor(name);
                   return (
-                    <button
-                      key={name}
-                      type="button"
-                      title={name}
-                      onClick={() => toggleColor(name)}
-                      className={`relative w-8 h-8 rounded-full border-2 transition-all ${
-                        selected
-                          ? "border-foreground scale-110 shadow-md"
-                          : light
-                          ? "border-border hover:border-muted-foreground"
-                          : "border-transparent hover:border-muted-foreground"
-                      }`}
-                      style={{ backgroundColor: hex }}
-                    >
-                      {selected && (
-                        <Check
-                          className={`absolute inset-0 m-auto w-3.5 h-3.5 ${light ? "text-foreground" : "text-white"}`}
-                          strokeWidth={3}
-                        />
+                    <div key={name} className="relative group">
+                      <button
+                        type="button"
+                        title={name}
+                        onClick={() => toggleColor(name)}
+                        className={`relative w-8 h-8 rounded-full border-2 transition-all ${
+                          selected
+                            ? "border-foreground scale-110 shadow-md"
+                            : light
+                            ? "border-border hover:border-muted-foreground"
+                            : "border-transparent hover:border-muted-foreground"
+                        }`}
+                        style={{ backgroundColor: hex }}
+                      >
+                        {selected && (
+                          <Check
+                            className={`absolute inset-0 m-auto w-3.5 h-3.5 ${light ? "text-foreground" : "text-white"}`}
+                            strokeWidth={3}
+                          />
+                        )}
+                      </button>
+                      {isCustom && (
+                        <button
+                          type="button"
+                          title={`Șterge ${name}`}
+                          onClick={() => {
+                            // Remove from custom colors
+                            setCustomColors((prev) => prev.filter((c) => c.name !== name));
+                            // Also deselect if it was selected
+                            setForm((f) => ({
+                              ...f,
+                              colors: f.colors.filter((c) => c !== name),
+                            }));
+                          }}
+                          className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-destructive text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:scale-110"
+                        >
+                          <X className="w-2.5 h-2.5" strokeWidth={3} />
+                        </button>
                       )}
-                    </button>
+                    </div>
                   );
                 })}
+                {/* + button to add custom color */}
+                <button
+                  type="button"
+                  title="Adaugă o culoare personalizată"
+                  onClick={() => {
+                    setCustomColorName("");
+                    setCustomColorHex("#E91E8C");
+                    setShowCustomColorForm(true);
+                  }}
+                  className="w-8 h-8 rounded-full border-2 border-dashed border-border hover:border-foreground flex items-center justify-center transition-colors"
+                >
+                  <Plus className="w-4 h-4 text-muted-foreground" strokeWidth={2} />
+                </button>
               </div>
+
+              {/* Inline custom color form */}
+              {showCustomColorForm && (
+                <div className="mt-4 border border-border p-4 space-y-3 bg-muted/20">
+                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
+                    Culoare Personalizată
+                  </p>
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="color"
+                      value={customColorHex}
+                      onChange={(e) => setCustomColorHex(e.target.value)}
+                      className="w-10 h-10 p-0.5 border border-border cursor-pointer bg-transparent"
+                    />
+                    <input
+                      type="text"
+                      value={customColorName}
+                      onChange={(e) => setCustomColorName(e.target.value)}
+                      className="flex-1 border border-border bg-background px-3 py-2 text-sm focus:border-foreground outline-none transition-colors"
+                      placeholder="Nume culoare (ex. Peach)"
+                    />
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const name = customColorName.trim();
+                        if (!name) return;
+                        // Add to custom colors
+                        setCustomColors((prev) => [...prev, { name, hex: customColorHex }]);
+                        // Auto-select it
+                        setForm((f) => ({
+                          ...f,
+                          colors: f.colors.includes(name) ? f.colors : [...f.colors, name],
+                        }));
+                        setShowCustomColorForm(false);
+                        setCustomColorName("");
+                      }}
+                      disabled={!customColorName.trim()}
+                      className="flex-1 h-9 bg-foreground text-background text-xs uppercase tracking-widest font-medium hover:bg-foreground/80 disabled:opacity-40 transition-colors"
+                    >
+                      Adaugă
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowCustomColorForm(false)}
+                      className="h-9 px-4 border border-border text-xs uppercase tracking-widest hover:bg-muted transition-colors"
+                    >
+                      Anulează
+                    </button>
+                  </div>
+                </div>
+              )}
+
               {form.colors.length > 0 && (
                 <p className="text-xs text-muted-foreground mt-3">
                   {form.colors.join(", ")}
