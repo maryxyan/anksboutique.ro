@@ -535,7 +535,7 @@ paths:
                 items:
                   $ref: "#/components/schemas/InventoryItem"
 
-  # Netopia payment callback
+  # Netopia payment callback (IPN)
   /payments/netopia/callback:
     post:
       operationId: netopiaCallback
@@ -559,6 +559,28 @@ paths:
             application/xml:
               schema:
                 type: string
+
+  # Netopia payment return URL
+  /payments/netopia/return:
+    get:
+      operationId: netopiaReturn
+      tags: [orders]
+      summary: Netopia payment return page (receipt)
+      parameters:
+        - name: orderId
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Order receipt page
+          content:
+            text/html:
+              schema:
+                type: string
+        "404":
+          description: Order not found
 
 components:
   schemas:
