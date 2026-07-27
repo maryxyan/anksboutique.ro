@@ -1,0 +1,5 @@
+name: 🚀 Deploy to anksboutique.ro
+
+on:
+  push:
+    branches: [main]
