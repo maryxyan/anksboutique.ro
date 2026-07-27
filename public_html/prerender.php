@@ -27,7 +27,7 @@ if (!$isBot) {
 }
 
 // URL-ul API intern
-$apiBase = 'http://127.0.0.1:3000';
+$apiBase = 'http://127.0.0.1:8080';
 
 $extraJsonLd = '';
 $metaTitle = "Ank's Boutique";

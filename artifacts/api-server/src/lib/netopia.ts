@@ -184,11 +184,11 @@ function buildPaymentXml(config: NetopiaConfig, order: PaymentOrderData): string
 
   const returnUrl = escapeXml(
     order.returnUrl ??
-      `${process.env["APP_BASE_URL"] ?? "http://localhost:8080"}/api/payments/netopia/return?orderId=${order.orderId}`,
+      `${process.env["APP_BASE_URL"] ?? "https://anksboutique.ro"}/api/payments/netopia/return?orderId=${order.orderId}`,
   );
   const confirmUrl = escapeXml(
     order.confirmUrl ??
-      `${process.env["APP_BASE_URL"] ?? "http://localhost:8080"}/api/payments/netopia/callback`,
+      `${process.env["APP_BASE_URL"] ?? "https://anksboutique.ro"}/api/payments/netopia/callback`,
   );
 
   const xml = [

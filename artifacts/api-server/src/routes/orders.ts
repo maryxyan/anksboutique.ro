@@ -123,7 +123,7 @@ async function getReceiptHtml(orderId: number): Promise<string | null> {
     CUSTOMER_CITY: escapeHtml(order.city ?? ""),
     CUSTOMER_COUNTY: escapeHtml(order.county ?? ""),
     CUSTOMER_POSTAL_CODE: escapeHtml(order.postalCode ?? ""),
-    SHOP_URL: process.env["FRONTEND_URL"] ?? "http://localhost:5173/shop",
+    SHOP_URL: process.env["FRONTEND_URL"] ?? "https://anksboutique.ro/shop",
     SUPPORT_EMAIL: "contact@anksboutique.ro",
   });
 

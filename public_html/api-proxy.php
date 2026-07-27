@@ -3,7 +3,7 @@
  * API Proxy - forward requests to Node.js backend
  */
 
-$apiUrl = 'http://127.0.0.1:3000';
+$apiUrl = 'http://127.0.0.1:8080';
 $requestUri = $_SERVER['REQUEST_URI'] ?? '';
 $path = parse_url($requestUri, PHP_URL_PATH);
 $query = parse_url($requestUri, PHP_URL_QUERY);
