@@ -2,11 +2,13 @@ name: 🚀 Deploy to anksboutique.ro
 
 on:
   push:
-    branches: [main]
+    branches:
+      - main
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -18,9 +20,3 @@ jobs:
           password: ${{ secrets.FTP_PASSWORD }}
           local-dir: public_html/
           server-dir: public_html/
-EOF
-
-# Commit and push
-git add .github/workflows/deploy.yml
-git commit -m "Fix deploy workflow format"
-git push
