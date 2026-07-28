@@ -3,7 +3,9 @@
  * API Proxy - forward requests to Node.js backend
  */
 
-$apiUrl = 'http://127.0.0.1:8080';
+// Allow the API URL to be overridden by an environment variable (set in Apache config)
+// Default to 127.0.0.1:300 which matches the Node.js server's default port
+$apiUrl = getenv('API_PROXY_URL') ?: 'http://127.0.0.1:300';
 $requestUri = $_SERVER['REQUEST_URI'] ?? '';
 $path = parse_url($requestUri, PHP_URL_PATH);
 $query = parse_url($requestUri, PHP_URL_QUERY);
@@ -86,7 +88,7 @@ curl_setopt_array($ch, array(
     CURLOPT_HEADER => true,
     CURLOPT_FOLLOWLOCATION => false,
     CURLOPT_TIMEOUT => 30,
-    CURLOPT_CONNECTTIMEOUT => 5,
+    CURLOPT_CONNECTTIMEOUT => 10,
     CURLOPT_HTTPHEADER => $headers,
 ));
 
@@ -130,7 +132,35 @@ curl_close($ch);
 if ($error) {
     http_response_code(502);
     header('Content-Type: application/json');
-    echo json_encode(array('error' => 'Proxy error: ' . $error));
+
+    // Gather diagnostic info to help debug connection issues
+    $diag = array(
+        'error' => 'Proxy error: ' . $error,
+        'target' => $target,
+        'method' => $method,
+        'connect_timeout' => 10,
+    );
+
+    // Check if we can resolve the hostname
+    $host = parse_url($target, PHP_URL_HOST) ?: '127.0.0.1';
+    $resolved = gethostbynamel($host);
+    if ($resolved === false) {
+        $diag['dns'] = 'DNS resolution failed for ' . $host;
+    } else {
+        $diag['dns'] = $resolved;
+    }
+
+    // Quick socket check on the target
+    $port = parse_url($target, PHP_URL_PORT) ?: 80;
+    $fp = @fsockopen($host, $port, $errno, $errstr, 2);
+    if ($fp) {
+        $diag['socket_check'] = 'open';
+        fclose($fp);
+    } else {
+        $diag['socket_check'] = 'closed (' . $errstr . ')';
+    }
+
+    echo json_encode($diag);
     exit;
 }
 
