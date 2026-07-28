@@ -12,7 +12,7 @@
  */
 
 // Configuration
-$apiUrl = 'http://127.0.0.1:300';
+$apiUrl = 'http://127.0.0.1:8080';
 $healthEndpoint = $apiUrl . '/api/healthz';
 $pidFile = '/home/r142031anks/api-server.pid';
 $logFile = '/home/r142031anks/api-health-check.log';
@@ -78,7 +78,7 @@ foreach ($nodePaths as $nodePath) {
     if (!file_exists($nodePath)) continue;
     
     $cmd = sprintf(
-        'export PATH="%s:$PATH" && cd %s && DATABASE_URL="postgresql://anksboutique@localhost:5432/anksboutique" PORT=300 nohup %s %s > %s 2>&1 & echo $!',
+        'export PATH="%s:$PATH" && cd %s && DATABASE_URL="postgresql://anksboutique@localhost:5432/anksboutique" PORT=8080 nohup %s %s > %s 2>&1 & echo $!',
         dirname($nodePath),
         dirname(dirname($appPath)),
         $nodePath,
