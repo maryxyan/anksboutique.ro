@@ -4,8 +4,8 @@
  */
 
 // Allow the API URL to be overridden by an environment variable (set in Apache config)
-// Default to 127.0.0.1:300 which matches the Node.js server's default port
-$apiUrl = getenv('API_PROXY_URL') ?: 'http://127.0.0.1:300';
+// Default to 127.0.0.1:8080 which matches the Node.js server's default port
+$apiUrl = getenv('API_PROXY_URL') ?: 'http://127.0.0.1:8080';
 $requestUri = $_SERVER['REQUEST_URI'] ?? '';
 $path = parse_url($requestUri, PHP_URL_PATH);
 $query = parse_url($requestUri, PHP_URL_QUERY);

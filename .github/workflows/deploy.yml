@@ -24,7 +24,7 @@ jobs:
       - name: 📥 Install dependencies
         run: pnpm install
 
-      - name: 🔨 Build frontend only
+      - name: 🔨 Build frontend
         run: |
           cd artifacts/ank-boutique
           PORT=300 BASE_PATH=/ pnpm build
