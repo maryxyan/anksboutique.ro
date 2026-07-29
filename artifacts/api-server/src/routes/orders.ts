@@ -420,10 +420,6 @@ router.post("/payments/netopia/callback", async (req: Request, res: Response): P
             break;
         }
 
-        if (ipnResult.transactionId) {
-          (updateData as any).netopiaOrderId = ipnResult.transactionId;
-        }
-
         await db.update(ordersTable).set(updateData).where(eq(ordersTable.id, order.id));
       }
     }

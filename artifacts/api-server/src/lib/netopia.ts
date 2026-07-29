@@ -21,6 +21,7 @@
 
 import * as crypto from "node:crypto";
 import * as fs from "node:fs";
+import * as path from "node:path";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -101,9 +102,27 @@ const LIVE_PAYMENT_URL = "https://secure.mobilpay.ro";
 
 // ── Configuration ────────────────────────────────────────────────────────────
 
+function resolveKey(keyRaw: string): string {
+  if (!keyRaw) return "";
+  let cleanPath = keyRaw;
+  if (cleanPath.startsWith("file://")) {
+    cleanPath = cleanPath.slice(7);
+  }
+  if (fs.existsSync(cleanPath)) {
+    return fs.readFileSync(cleanPath, "utf-8").trim();
+  }
+  if (!cleanPath.includes("-----BEGIN")) {
+    const resolved = path.resolve(process.cwd(), cleanPath);
+    if (fs.existsSync(resolved)) {
+      return fs.readFileSync(resolved, "utf-8").trim();
+    }
+  }
+  return keyRaw.trim();
+}
+
 /**
  * Load Netopia configuration from environment variables.
- * Scans both raw key strings and file paths (prefixed with "file://").
+ * Scans both raw key strings and file paths (prefixed with "file://" or local paths).
  */
 export function loadConfigFromEnv(): NetopiaConfig {
   const sandbox = process.env["NETOPIA_SANDBOX"] !== "false";
@@ -111,15 +130,8 @@ export function loadConfigFromEnv(): NetopiaConfig {
   const publicKeyRaw = process.env["NETOPIA_PUBLIC_KEY_PATH"] ?? "";
   const privateKeyRaw = process.env["NETOPIA_PRIVATE_KEY_PATH"] ?? "";
 
-  // Resolve public key (from file or raw string)
-  const publicKey = publicKeyRaw.startsWith("file://")
-    ? fs.readFileSync(publicKeyRaw.slice(7), "utf-8")
-    : publicKeyRaw;
-
-  // Resolve private key (from file or raw string)
-  const privateKey = privateKeyRaw.startsWith("file://")
-    ? fs.readFileSync(privateKeyRaw.slice(7), "utf-8")
-    : privateKeyRaw;
+  const publicKey = resolveKey(publicKeyRaw);
+  const privateKey = resolveKey(privateKeyRaw);
 
   return {
     merchantId,
@@ -146,31 +158,20 @@ export function createSandboxStubConfig(): NetopiaConfig {
   };
 }
 
+function splitName(fullName: string): { firstName: string; lastName: string } {
+  const parts = fullName.trim().split(/\s+/);
+  if (parts.length === 1) {
+    return { firstName: parts[0] || "Client", lastName: parts[0] || "Client" };
+  }
+  const lastName = parts.pop() || "Client";
+  const firstName = parts.join(" ") || "Client";
+  return { firstName, lastName };
+}
+
 // ── XML Envelope Building (Manual string-based) ─────────────────────────────
 
 /**
  * Build the Netopia payment XML request envelope.
- *
- * Netopia's XML format:
- * ```xml
- * <?xml version="1.0" encoding="UTF-8"?>
- * <order type="card" id="ORDER_ID" timestamp="YYYYMMDDHHMMSS">
- *   <signature>MERCHANT_ID</signature>
- *   <url>
- *     <return>RETURN_URL</return>
- *     <confirm>CONFIRM_URL</confirm>
- *   </url>
- *   <invoice>
- *     <amount>199.99</amount>
- *     <currency>RON</currency>
- *     <details>Order description</details>
- *   </invoice>
- *   <contact>
- *     <email>customer@example.com</email>
- *     <phone>+40XXXXXXXXX</phone>
- *   </contact>
- * </order>
- * ```
  */
 function buildPaymentXml(config: NetopiaConfig, order: PaymentOrderData): string {
   const now = new Date();
@@ -182,35 +183,47 @@ function buildPaymentXml(config: NetopiaConfig, order: PaymentOrderData): string
     String(now.getMinutes()).padStart(2, "0") +
     String(now.getSeconds()).padStart(2, "0");
 
+  const baseUrl = process.env["APP_BASE_URL"] ?? "https://anksboutique.ro";
   const returnUrl = escapeXml(
-    order.returnUrl ??
-      `${process.env["APP_BASE_URL"] ?? "https://anksboutique.ro"}/api/payments/netopia/return?orderId=${order.orderId}`,
+    order.returnUrl ?? `${baseUrl}/api/payments/netopia/return?orderId=${order.orderId}`,
   );
   const confirmUrl = escapeXml(
-    order.confirmUrl ??
-      `${process.env["APP_BASE_URL"] ?? "https://anksboutique.ro"}/api/payments/netopia/callback`,
+    order.confirmUrl ?? `${baseUrl}/api/payments/netopia/callback`,
   );
+
+  const { firstName, lastName } = splitName(order.customerName);
 
   const xml = [
     '<?xml version="1.0" encoding="UTF-8"?>',
     `<order type="card" id="${escapeXml(order.orderId)}" timestamp="${escapeXml(timestamp)}">`,
-    `  <signature>${escapeXml(config.apiKey ?? config.merchantId)}</signature>`,
+    `  <signature>${escapeXml(config.merchantId)}</signature>`,
     "  <url>",
     `    <return>${returnUrl}</return>`,
     `    <confirm>${confirmUrl}</confirm>`,
     "  </url>",
-    "  <invoice>",
-    `    <amount>${escapeXml(order.amount)}</amount>`,
-    `    <currency>${escapeXml(order.currency)}</currency>`,
+    `  <invoice currency="${escapeXml(order.currency)}" amount="${escapeXml(order.amount)}">`,
     `    <details>${escapeXml(order.description ?? `Comanda #${order.orderId} - Anks Boutique`)}</details>`,
+    "    <contact_info>",
+    '      <billing type="individual">',
+    `        <first_name>${escapeXml(firstName)}</first_name>`,
+    `        <last_name>${escapeXml(lastName)}</last_name>`,
+    `        <email>${escapeXml(order.customerEmail)}</email>`,
+    `        <mobile_phone>${escapeXml(order.customerPhone ?? "")}</mobile_phone>`,
+    `        <address>${escapeXml(order.billingAddress ?? "")}</address>`,
+    `        <city>${escapeXml(order.billingCity ?? "")}</city>`,
+    `        <country>${escapeXml(order.billingCountry ?? "RO")}</country>`,
+    "      </billing>",
+    '      <shipping type="individual">',
+    `        <first_name>${escapeXml(firstName)}</first_name>`,
+    `        <last_name>${escapeXml(lastName)}</last_name>`,
+    `        <email>${escapeXml(order.customerEmail)}</email>`,
+    `        <mobile_phone>${escapeXml(order.customerPhone ?? "")}</mobile_phone>`,
+    `        <address>${escapeXml(order.billingAddress ?? "")}</address>`,
+    `        <city>${escapeXml(order.billingCity ?? "")}</city>`,
+    `        <country>${escapeXml(order.billingCountry ?? "RO")}</country>`,
+    "      </shipping>",
+    "    </contact_info>",
     "  </invoice>",
-    "  <contact>",
-    `    <email>${escapeXml(order.customerEmail)}</email>`,
-    `    <phone>${escapeXml(order.customerPhone ?? "")}</phone>`,
-    `    <billing-address>${escapeXml(order.billingAddress ?? "")}</billing-address>`,
-    `    <billing-city>${escapeXml(order.billingCity ?? "")}</billing-city>`,
-    `    <billing-country>${escapeXml(order.billingCountry ?? "RO")}</billing-country>`,
-    "  </contact>",
     "</order>",
   ].join("\n");
 
@@ -336,12 +349,11 @@ export function encryptPaymentRequest(
 
   // Encrypt XML payload with AES-256-CBC
   const cipher = crypto.createCipheriv("aes-256-cbc", aesKey, iv);
-  let encryptedData = cipher.update(xmlPayload, "utf-8", "base64");
-  encryptedData += cipher.final("base64");
+  const encryptedPayload = Buffer.concat([cipher.update(xmlPayload, "utf-8"), cipher.final()]);
 
-  // Prepend IV to encrypted data (Netopia expects IV + ciphertext)
-  const ivBase64 = iv.toString("base64");
-  const data = ivBase64 + encryptedData;
+  // Combine raw IV (16 bytes) + raw ciphertext, then base64 encode
+  const combined = Buffer.concat([iv, encryptedPayload]);
+  const data = combined.toString("base64");
 
   // Encrypt AES key with RSA public key
   const encryptedAesKey = crypto.publicEncrypt(
