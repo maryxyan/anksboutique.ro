@@ -97,8 +97,8 @@ export interface IpnResponse {
 
 // ── Default URLs ─────────────────────────────────────────────────────────────
 
-const SANDBOX_PAYMENT_URL = "https://sandboxsecure.mobilpay.ro";
-const LIVE_PAYMENT_URL = "https://secure.mobilpay.ro";
+const SANDBOX_PAYMENT_URL = "https://sandboxsecure.mobilpay.ro/card/";
+const LIVE_PAYMENT_URL = "https://secure.mobilpay.ro/card/";
 
 // ── Configuration ────────────────────────────────────────────────────────────
 

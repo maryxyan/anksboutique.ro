@@ -3,6 +3,7 @@ import { Layout } from "@/components/layout/Layout";
 import { useState, useEffect, useRef } from "react";
 import { useGetCart, getGetCartQueryKey, useCreateOrder } from "@workspace/api-client-react";
 import { useSessionId } from "@/hooks/use-session";
+import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 import { ShoppingBag, Lock, Check } from "lucide-react";
 import { motion } from "framer-motion";
@@ -19,6 +20,7 @@ const COUNTIES = [
 export default function Checkout() {
   const sessionId = useSessionId();
   const formRef = useRef<HTMLFormElement>(null);
+  const { toast } = useToast();
 
   const { data: cart } = useGetCart(
     { sessionId },
@@ -75,6 +77,13 @@ export default function Checkout() {
           setPaymentData({
             paymentUrl: data.paymentUrl,
             netopiaFormData: data.netopiaFormData || {},
+          });
+        },
+        onError: (error: any) => {
+          toast({
+            variant: "destructive",
+            title: "Eroare la plasarea comandei",
+            description: error?.message || "A apărut o eroare la procesarea comandei. Vă rugăm să încercați din nou.",
           });
         },
       }

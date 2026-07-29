@@ -326,6 +326,23 @@
       </p>
     </div>
   </div>
+  <script>
+    (function() {
+      if (document.querySelector(".status-banner.pending")) {
+        var retries = parseInt(sessionStorage.getItem("netopia_pending_retries") || "0", 10);
+        if (retries < 10) {
+          sessionStorage.setItem("netopia_pending_retries", (retries + 1).toString());
+          setTimeout(function() {
+            window.location.reload();
+          }, 3000);
+        } else {
+          sessionStorage.removeItem("netopia_pending_retries");
+        }
+      } else {
+        sessionStorage.removeItem("netopia_pending_retries");
+      }
+    })();
+  </script>
 </body>
 </html>
 
