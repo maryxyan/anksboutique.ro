@@ -193,18 +193,21 @@ function buildPaymentXml(config: NetopiaConfig, order: PaymentOrderData): string
 
   const { firstName, lastName } = splitName(order.customerName);
 
+  const signature = config.apiKey ?? config.merchantId;
+
   const xml = [
     '<?xml version="1.0" encoding="UTF-8"?>',
     `<order type="card" id="${escapeXml(order.orderId)}" timestamp="${escapeXml(timestamp)}">`,
-    `  <signature>${escapeXml(config.merchantId)}</signature>`,
+    `  <signature>${escapeXml(signature)}</signature>`,
     "  <url>",
     `    <return>${returnUrl}</return>`,
     `    <confirm>${confirmUrl}</confirm>`,
     "  </url>",
+    `  <ipn_cipher>aes-256-cbc</ipn_cipher>`,
     `  <invoice currency="${escapeXml(order.currency)}" amount="${escapeXml(order.amount)}">`,
     `    <details>${escapeXml(order.description ?? `Comanda #${order.orderId} - Anks Boutique`)}</details>`,
     "    <contact_info>",
-    '      <billing type="individual">',
+    '      <billing type="person">',
     `        <first_name>${escapeXml(firstName)}</first_name>`,
     `        <last_name>${escapeXml(lastName)}</last_name>`,
     `        <email>${escapeXml(order.customerEmail)}</email>`,
@@ -213,7 +216,7 @@ function buildPaymentXml(config: NetopiaConfig, order: PaymentOrderData): string
     `        <city>${escapeXml(order.billingCity ?? "")}</city>`,
     `        <country>${escapeXml(order.billingCountry ?? "RO")}</country>`,
     "      </billing>",
-    '      <shipping type="individual">',
+    '      <shipping type="person">',
     `        <first_name>${escapeXml(firstName)}</first_name>`,
     `        <last_name>${escapeXml(lastName)}</last_name>`,
     `        <email>${escapeXml(order.customerEmail)}</email>`,
