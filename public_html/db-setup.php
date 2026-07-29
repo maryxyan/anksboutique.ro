@@ -2,113 +2,93 @@
 /**
  * Database Setup Script - Create labels table
  *
- * Access via browser: https://anksboutique.ro/db-setup.php
- * Delete this file after running!
+ * IMPORTANT: This PHP setup failed because pg_connect is not available.
+ * 
+ * The GOOD NEWS: The code now auto-creates the table on server startup!
+ * 
+ * What you need to do:
+ * 1. Upload the updated dist/ folder (from artifacts/api-server/dist/)
+ * 2. Restart the Node.js API server
+ * 3. That's it! The server will create the labels table automatically
+ *
+ * ================================================
+ * MANUAL SQL (if auto-creation doesn't work):
+ * Go to cPanel -> PostgreSQL Databases -> phpPgAdmin
+ * Or use the PostgreSQL section in cPanel to run:
+ * ================================================
+ *
+ * CREATE TABLE IF NOT EXISTS labels (
+ *   id SERIAL PRIMARY KEY,
+ *   name TEXT NOT NULL,
+ *   slug TEXT NOT NULL UNIQUE,
+ *   description TEXT,
+ *   sort_order INTEGER NOT NULL DEFAULT 0,
+ *   status TEXT NOT NULL DEFAULT 'active',
+ *   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+ * );
+ *
+ * INSERT INTO labels (name, slug, description, sort_order, status) VALUES
+ *   ('New', 'new', 'Eticheta pentru produse noi', 1, 'active'),
+ *   ('Best Seller', 'best-seller', 'Cele mai vandute produse', 2, 'active'),
+ *   ('Limited', 'limited', 'Colectie limitata', 3, 'active')
+ * ON CONFLICT (slug) DO NOTHING;
  */
+?>
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+<meta charset="UTF-8">
+<title>Database Setup - Labels Table</title>
+<style>
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 700px; margin: 40px auto; padding: 20px; line-height: 1.6; }
+  h2 { color: #333; }
+  .step { background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; padding: 16px; margin: 16px 0; }
+  .step h3 { margin: 0 0 8px 0; color: #166534; }
+  .step p { margin: 4px 0; color: #166534; }
+  pre { background: #1e1e1e; color: #d4d4d4; padding: 16px; border-radius: 8px; overflow-x: auto; font-size: 13px; }
+  code { background: #f5f5f5; padding: 2px 6px; border-radius: 4px; font-size: 13px; }
+  .warning { background: #fef3c7; border: 1px solid #fcd34d; border-radius: 8px; padding: 16px; margin: 16px 0; }
+  .warning h3 { margin: 0 0 8px 0; color: #92400e; }
+  .warning p { margin: 4px 0; color: #92400e; }
+  .error-box { background: #fef2f2; border: 1px solid #fca5a5; border-radius: 8px; padding: 16px; margin: 16px 0; }
+  .error-box h3 { margin: 0 0 8px 0; color: #991b1b; }
+  .error-box p { margin: 4px 0; color: #991b1b; }
+</style>
+</head>
+<body>
+  <h2>Configurare Database - Etichete (Labels)</h2>
 
-// Use the same DB credentials as the app
-// The API proxy connects to Node.js which uses DATABASE_URL
-// For direct DB access via PHP, we need pg_connect
+  <div class="step">
+    <h3>✅ Pasul 1: Incarca fisierele actualizate</h3>
+    <p>Urcati continutul din folderul <code>artifacts/api-server/dist/</code> pe server, in locatia unde ruleaza API-ul.</p>
+  </div>
 
-$dbUrl = getenv('DATABASE_URL') ?: '';
+  <div class="step">
+    <h3>✅ Pasul 2: Restartati API-ul Node.js</h3>
+    <p>Din cPanel → Setup Node.js App → dati restart.</p>
+    <p>Dupa restart, serverul va crea automat tabela <code>labels</code> si o va popula cu cele 3 etichete implicite.</p>
+  </div>
 
-// Parse DATABASE_URL (postgresql://user:pass@host:5432/dbname)
-if (empty($dbUrl)) {
-    // Try to read from .env or use default cPanel PostgreSQL settings
-    $dbHost = 'localhost';
-    $dbPort = 5432;
-    $dbName = 'anksboutique';
-    $dbUser = 'anksboutique';
-    $dbPass = '';
-    
-    echo "<div style='font-family: sans-serif; max-width: 600px; margin: 40px auto; padding: 20px;'>";
-    echo "<h2>Database Setup</h2>";
-    echo "<p style='color: #666;'>DATABASE_URL not found in environment.</p>";
-    
-    // Try to detect from common cPanel PostgreSQL env vars
-    if (getenv('PGHOST')) $dbHost = getenv('PGHOST');
-    if (getenv('PGPORT')) $dbPort = getenv('PGPORT');
-    if (getenv('PGDATABASE')) $dbName = getenv('PGDATABASE');
-    if (getenv('PGUSER')) $dbUser = getenv('PGUSER');
-    if (getenv('PGPASSWORD')) $dbPass = getenv('PGPASSWORD');
-    
-} else {
-    $parts = parse_url($dbUrl);
-    $dbHost = $parts['host'] ?? 'localhost';
-    $dbPort = $parts['port'] ?? 5432;
-    $dbUser = $parts['user'] ?? 'anksboutique';
-    $dbPass = $parts['pass'] ?? '';
-    $dbName = ltrim($parts['path'] ?? '/anksboutique', '/');
-}
+  <div class="step">
+    <h3>✅ Pasul 3: Verificati</h3>
+    <p>Accesati pagina de etichete din admin. Ar trebui sa se incarce corect acum.</p>
+  </div>
 
-echo "<h2>Database Setup</h2>";
-echo "<p>Host: $dbHost:$dbPort</p>";
-echo "<p>Database: $dbName</p>";
-echo "<p>User: $dbUser</p>";
-echo "<hr>";
+  <hr>
 
-// Connect to PostgreSQL
-$conn = @pg_connect("host=$dbHost port=$dbPort dbname=$dbName user=$dbUser password=$dbPass");
+  <div class="error-box">
+    <h3>⚠️ PHP PostgreSQL Extension (pg_connect) nu este disponibila</h3>
+    <p>Scriptul PHP nu poate crea tabela direct.</p>
+  </div>
 
-if (!$conn) {
-    echo "<p style='color: red; font-weight: bold;'>Failed to connect: " . pg_last_error() . "</p>";
-    echo "<p>To create the table manually, open phpMyAdmin (or PostgreSQL admin in cPanel) and run:</p>";
-    echo "<pre style='background: #f5f5f5; padding: 15px; overflow-x: auto; font-size: 13px;'>";
-} else {
-    echo "<p style='color: green;'>✓ Connected to PostgreSQL successfully!</p>";
+  <div class="warning">
+    <h3>🛠 Daca auto-crearea nu functioneaza (sql manual)</h3>
+    <p>1. Accesati cPanel → PostgreSQL Databases → phpPgAdmin</p>
+    <p>2. Selectati baza de date <code>anksboutique</code></p>
+    <p>3. Deschideti tab-ul "SQL" si rulati:</p>
+  </div>
 
-    // Create labels table
-    $sql = "
-CREATE TABLE IF NOT EXISTS labels (
-  id SERIAL PRIMARY KEY,
-  name TEXT NOT NULL,
-  slug TEXT NOT NULL UNIQUE,
-  description TEXT,
-  sort_order INTEGER NOT NULL DEFAULT 0,
-  status TEXT NOT NULL DEFAULT 'active',
-  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);";
-
-    $result = @pg_query($conn, $sql);
-    if ($result) {
-        echo "<p style='color: green;'>✓ 'labels' table created successfully!</p>";
-    } else {
-        echo "<p style='color: orange;'>Table creation: " . pg_last_error($conn) . "</p>";
-        echo "<p>(May already exist — that's fine)</p>";
-    }
-
-    // Seed default labels
-    $seedSQL = "
-INSERT INTO labels (name, slug, description, sort_order, status) VALUES
-  ('New', 'new', 'Eticheta pentru produse noi', 1, 'active'),
-  ('Best Seller', 'best-seller', 'Cele mai vandute produse', 2, 'active'),
-  ('Limited', 'limited', 'Colectie limitata', 3, 'active')
-ON CONFLICT (slug) DO NOTHING;";
-
-    $result = @pg_query($conn, $seedSQL);
-    if ($result) {
-        echo "<p style='color: green;'>✓ Default labels seeded successfully!</p>";
-    } else {
-        echo "<p style='color: orange;'>Seed: " . pg_last_error($conn) . "</p>";
-    }
-
-    // Grant permissions
-    $permSQL = "GRANT ALL PRIVILEGES ON TABLE labels TO $dbUser;";
-    @pg_query($conn, $permSQL);
-    $permSQL2 = "GRANT USAGE, SELECT ON SEQUENCE labels_id_seq TO $dbUser;";
-    @pg_query($conn, $permSQL2);
-
-    pg_close($conn);
-    echo "<hr><p style='color: green; font-weight: bold;'>✓ Setup complete!</p>";
-    echo "<p><strong>Next step:</strong> Upload the updated dist files to the server.</p>";
-    echo "<p>1. Copy the contents of <code>artifacts/api-server/dist/</code> to your server</p>";
-    echo "<p>2. Restart the Node.js API server (via cPanel -> Setup Node.js App -> Restart)</p>";
-}
-
-// Show the SQL for manual execution
-echo "<h3>Manual SQL (if needed):</h3>";
-echo "<pre style='background: #f5f5f5; padding: 15px; overflow-x: auto; font-size: 13px;'>";
-echo htmlspecialchars("
+  <pre>
 CREATE TABLE IF NOT EXISTS labels (
   id SERIAL PRIMARY KEY,
   name TEXT NOT NULL,
@@ -123,8 +103,11 @@ INSERT INTO labels (name, slug, description, sort_order, status) VALUES
   ('New', 'new', 'Eticheta pentru produse noi', 1, 'active'),
   ('Best Seller', 'best-seller', 'Cele mai vandute produse', 2, 'active'),
   ('Limited', 'limited', 'Colectie limitata', 3, 'active')
-ON CONFLICT (slug) DO NOTHING;
-");
-echo "</pre>";
-echo "<p style='color: #999; font-size: 12px;'>Delete this file after setup: <code>db-setup.php</code></p>";
-echo "</div>";
+ON CONFLICT (slug) DO NOTHING;</pre>
+
+  <hr>
+  <p style="color: #999; font-size: 12px; margin-top: 32px;">
+    Stergeti acest fisier dupa ce ati rezolvat setup-ul: <code>db-setup.php</code>
+  </p>
+</body>
+</html>
