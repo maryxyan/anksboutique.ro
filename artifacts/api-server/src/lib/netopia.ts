@@ -34,7 +34,7 @@ export interface NetopiaConfig {
   privateKey: string;
   /** Use sandbox (test) environment */
   sandbox: boolean;
-  /** API key/token for Netopia authentication (used as signature in payment XML) */
+  /** API key/token for Netopia's newer JSON APIs; not used by the legacy XML checkout flow */
   apiKey?: string;
   /** Custom payment URL override (optional) */
   paymentUrl?: string;
@@ -193,12 +193,14 @@ function buildPaymentXml(config: NetopiaConfig, order: PaymentOrderData): string
 
   const { firstName, lastName } = splitName(order.customerName);
 
-  const signature = config.apiKey ?? config.merchantId;
+  if (!config.merchantId) {
+    throw new Error("NETOPIA_MERCHANT_ID is required to build the payment request.");
+  }
 
   const xml = [
     '<?xml version="1.0" encoding="UTF-8"?>',
     `<order type="card" id="${escapeXml(order.orderId)}" timestamp="${escapeXml(timestamp)}">`,
-    `  <signature>${escapeXml(signature)}</signature>`,
+    `  <signature>${escapeXml(config.merchantId)}</signature>`,
     "  <url>",
     `    <return>${returnUrl}</return>`,
     `    <confirm>${confirmUrl}</confirm>`,
