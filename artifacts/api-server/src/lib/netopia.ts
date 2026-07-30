@@ -124,6 +124,53 @@ function resolveKey(keyRaw: string): string {
   return keyRaw.trim();
 }
 
+function fingerprintPublicComponent(keyMaterial: string, kind: "public" | "private"): string | null {
+  try {
+    const keyObject =
+      kind === "public" ? crypto.createPublicKey(keyMaterial) : crypto.createPrivateKey(keyMaterial);
+    const publicKeyObject = kind === "public" ? keyObject : crypto.createPublicKey(keyObject);
+    const der = publicKeyObject.export({ format: "der", type: "spki" });
+
+    return crypto.createHash("sha256").update(der).digest("hex").slice(0, 16);
+  } catch {
+    return null;
+  }
+}
+
+export interface NetopiaStartupDiagnostics {
+  merchantId: string;
+  sandbox: boolean;
+  paymentUrl: string;
+  publicKeyValid: boolean;
+  privateKeyValid: boolean;
+  publicKeyFingerprint: string | null;
+  privateKeyFingerprint: string | null;
+  keyPairMatches: boolean | null;
+}
+
+export function getNetopiaStartupDiagnostics(config: NetopiaConfig): NetopiaStartupDiagnostics {
+  const publicKeyFingerprint = config.publicKey
+    ? fingerprintPublicComponent(config.publicKey, "public")
+    : null;
+  const privateKeyFingerprint = config.privateKey
+    ? fingerprintPublicComponent(config.privateKey, "private")
+    : null;
+
+  return {
+    merchantId: config.merchantId,
+    sandbox: config.sandbox,
+    paymentUrl: getPaymentUrl(config),
+    publicKeyValid: publicKeyFingerprint !== null,
+    privateKeyValid: privateKeyFingerprint !== null,
+    publicKeyFingerprint,
+    privateKeyFingerprint,
+    keyPairMatches:
+      publicKeyFingerprint !== null && privateKeyFingerprint !== null
+        ? publicKeyFingerprint === privateKeyFingerprint
+        : null,
+  };
+}
+
 /**
  * Load Netopia configuration from environment variables.
  * Scans both raw key strings and file paths (prefixed with "file://" or local paths).
