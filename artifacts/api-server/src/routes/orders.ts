@@ -303,6 +303,8 @@ router.post("/orders", async (req, res): Promise<void> => {
     netopiaFormData: {
       env_key: paymentRequest.envKey,
       data: paymentRequest.data,
+      cipher: paymentRequest.cipher,
+      iv: paymentRequest.iv,
     },
   });
 });
@@ -370,7 +372,7 @@ router.patch("/orders/:id/status", async (req, res): Promise<void> => {
  * - Error: `<crc error_type="X" error_code="Y">Message</crc>`
  */
 router.post("/payments/netopia/callback", async (req: Request, res: Response): Promise<void> => {
-  const { env_key, data } = req.body;
+  const { env_key, data, cipher, iv } = req.body;
 
   console.log("[Netopia IPN] Callback received:", {
     hasEnvKey: !!env_key,
@@ -393,7 +395,7 @@ router.post("/payments/netopia/callback", async (req: Request, res: Response): P
   try {
     const netopiaConfig = getNetopiaConfig();
     console.log("[Netopia IPN] Starting decryption...");
-    const ipnResult = decryptIpnResponse(netopiaConfig, env_key, data);
+    const ipnResult = decryptIpnResponse(netopiaConfig, env_key, data, cipher, iv);
     console.log("[Netopia IPN] Decryption result:", {
       status: ipnResult.status,
       orderId: ipnResult.orderId,
@@ -496,4 +498,3 @@ router.get("/payments/netopia/return", async (req: Request, res: Response): Prom
 });
 
 export default router;
-

@@ -74,6 +74,10 @@ export interface PaymentRequestResult {
   envKey: string;
   /** Base64-encoded encrypted payment data */
   data: string;
+  /** Cipher used for the payload */
+  cipher: "aes-256-cbc";
+  /** Base64-encoded IV for the payload */
+  iv: string;
   /** The URL where the form should be submitted to */
   paymentUrl: string;
 }
@@ -357,7 +361,8 @@ function parseChildren(xml: string): Record<string, unknown> | string {
  * 1. Generate a random AES-256 key
  * 2. Encrypt the XML payload with AES-256-CBC
  * 3. Encrypt the AES key with Netopia's RSA-2048 public key
- * 4. Return env_key (RSA-encrypted AES key, base64) and data (AES-encrypted payload, base64)
+ * 4. Return env_key (RSA-encrypted AES key, base64), data (AES-encrypted payload, base64),
+ *    cipher, and iv
  */
 export function encryptPaymentRequest(
   config: NetopiaConfig,
@@ -374,6 +379,8 @@ export function encryptPaymentRequest(
         "base64",
       ),
       data: Buffer.from(JSON.stringify(order)).toString("base64"),
+      cipher: "aes-256-cbc",
+      iv: "",
       paymentUrl: getPaymentUrl(config),
     };
   }
@@ -399,9 +406,8 @@ export function encryptPaymentRequest(
   const cipher = crypto.createCipheriv("aes-256-cbc", aesKey, iv);
   const encryptedPayload = Buffer.concat([cipher.update(xmlPayload, "utf-8"), cipher.final()]);
 
-  // Combine raw IV (16 bytes) + raw ciphertext, then base64 encode
-  const combined = Buffer.concat([iv, encryptedPayload]);
-  const data = combined.toString("base64");
+  const data = encryptedPayload.toString("base64");
+  const ivBase64 = iv.toString("base64");
 
   // Encrypt AES key with RSA public key
   console.log("[Netopia] Encrypting AES key with RSA public key (PKCS1 padding)...");
@@ -423,6 +429,8 @@ export function encryptPaymentRequest(
   return {
     envKey,
     data,
+    cipher: "aes-256-cbc",
+    iv: ivBase64,
     paymentUrl: getPaymentUrl(config),
   };
 }
@@ -439,6 +447,8 @@ export function decryptIpnResponse(
   config: NetopiaConfig,
   envKeyBase64: string,
   dataBase64: string,
+  cipher?: string,
+  ivBase64?: string,
 ): IpnResponse {
   try {
     if (!config.privateKey) {
@@ -494,10 +504,13 @@ export function decryptIpnResponse(
       }
     }
 
-    // Decrypt data: first 16 bytes are IV, rest is ciphertext
     const encryptedPayload = Buffer.from(dataBase64, "base64");
-    const iv = encryptedPayload.subarray(0, 16);
-    const ciphertext = encryptedPayload.subarray(16);
+    const iv = ivBase64 ? Buffer.from(ivBase64, "base64") : encryptedPayload.subarray(0, 16);
+    const ciphertext = ivBase64 ? encryptedPayload : encryptedPayload.subarray(16);
+
+    if (cipher && cipher !== "aes-256-cbc") {
+      throw new Error(`Unsupported cipher: ${cipher}`);
+    }
 
     const decipher = crypto.createDecipheriv("aes-256-cbc", aesKey, iv);
     let decrypted = decipher.update(ciphertext);
