@@ -97,8 +97,8 @@ export interface IpnResponse {
 
 // ── Default URLs ─────────────────────────────────────────────────────────────
 
-const SANDBOX_PAYMENT_URL = "https://sandboxsecure.mobilpay.ro/card/";
-const LIVE_PAYMENT_URL = "https://secure.mobilpay.ro/card/";
+const SANDBOX_PAYMENT_URL = "https://sandboxsecure.mobilpay.ro";
+const LIVE_PAYMENT_URL = "https://secure.mobilpay.ro";
 
 // ── Configuration ────────────────────────────────────────────────────────────
 
@@ -123,22 +123,53 @@ function resolveKey(keyRaw: string): string {
 /**
  * Load Netopia configuration from environment variables.
  * Scans both raw key strings and file paths (prefixed with "file://" or local paths).
+ *
+ * ⚠️  IMPORTANT: The `<signature>` field in the payment XML must ALWAYS be the
+ *    merchant ID (`NETOPIA_MERCHANT_ID`), NOT the API key (`NETOPIA_API_KEY`).
+ *    Using the API key as the signature will cause Netopia to reject the request
+ *    with "Decriptarea datelor a eșuat" (data decryption failed).
  */
 export function loadConfigFromEnv(): NetopiaConfig {
   const sandbox = process.env["NETOPIA_SANDBOX"] !== "false";
   const merchantId = process.env["NETOPIA_MERCHANT_ID"] ?? "";
   const publicKeyRaw = process.env["NETOPIA_PUBLIC_KEY_PATH"] ?? "";
   const privateKeyRaw = process.env["NETOPIA_PRIVATE_KEY_PATH"] ?? "";
+  const apiKey = process.env["NETOPIA_API_KEY"] || undefined;
 
   const publicKey = resolveKey(publicKeyRaw);
   const privateKey = resolveKey(privateKeyRaw);
+
+  // ── Debug logging to diagnose key loading issues ────────────────────────
+  console.log({
+    merchantId: merchantId || "(empty — will cause errors)",
+    publicKeyLoaded: !!publicKey,
+    publicKeyLength: publicKey ? publicKey.length : 0,
+    publicKeySource: publicKeyRaw ? (publicKeyRaw.includes("-----BEGIN") ? "inline" : publicKeyRaw) : "(empty)",
+    privateKeyLoaded: !!privateKey,
+    privateKeyLength: privateKey ? privateKey.length : 0,
+    privateKeySource: privateKeyRaw ? (privateKeyRaw.includes("-----BEGIN") ? "inline" : privateKeyRaw) : "(empty)",
+    sandbox,
+    apiKeyPresent: !!apiKey,
+    // ⚠️  NETOPIA_API_KEY is NOT used in the `<signature>` field — the signature
+    //    always uses NETOPIA_MERCHANT_ID. If you're seeing "Decriptarea datelor a eșuat",
+    //    double-check that keys are loaded correctly (both true above) and that
+    //    NETOPIA_MERCHANT_ID is the correct merchant signature.
+  });
+
+  if (!publicKey && !privateKey) {
+    console.warn("[Netopia] No RSA keys configured — falling back to stub (unencrypted) mode. This is NOT suitable for production.");
+  } else if (!publicKey) {
+    console.warn("[Netopia] PUBLIC KEY is empty — encryption will fail!");
+  } else if (!privateKey) {
+    console.warn("[Netopia] PRIVATE KEY is empty — callback decryption will fail!");
+  }
 
   return {
     merchantId,
     publicKey,
     privateKey,
     sandbox,
-    apiKey: process.env["NETOPIA_API_KEY"] || undefined,
+    apiKey,
     paymentUrl: process.env["NETOPIA_PAYMENT_URL"] || undefined,
     apiUrl: process.env["NETOPIA_API_URL"] || undefined,
   };
@@ -333,6 +364,10 @@ export function encryptPaymentRequest(
   order: PaymentOrderData,
 ): PaymentRequestResult {
   if (!config.publicKey) {
+    console.warn(
+      "[Netopia] No public key configured — using unencrypted stub mode. " +
+        "This will NOT work with Netopia's live/sandbox environment.",
+    );
     // Fallback for development: return unencrypted data (sandbox-only)
     return {
       envKey: Buffer.from(JSON.stringify({ cipher: "none", merchant: config.merchantId })).toString(
@@ -345,6 +380,14 @@ export function encryptPaymentRequest(
 
   // Build XML envelope
   const xmlPayload = buildPaymentXml(config, order);
+
+  // Log the XML payload (without sensitive customer data) for debugging
+  const xmlLog = xmlPayload.replace(
+    /<first_name>.*?<\/first_name>|<last_name>.*?<\/last_name>|<email>.*?<\/email>|<mobile_phone>.*?<\/mobile_phone>|<address>.*?<\/address>/g,
+    "<redacted>...</redacted>",
+  );
+  console.log("[Netopia] Payment XML envelope:\n", xmlLog);
+  console.log("[Netopia] XML payload byte length:", Buffer.byteLength(xmlPayload, "utf-8"));
 
   // Generate random 32-byte AES key
   const aesKey = crypto.randomBytes(32);
@@ -361,6 +404,7 @@ export function encryptPaymentRequest(
   const data = combined.toString("base64");
 
   // Encrypt AES key with RSA public key
+  console.log("[Netopia] Encrypting AES key with RSA public key (PKCS1 padding)...");
   const encryptedAesKey = crypto.publicEncrypt(
     {
       key: config.publicKey,
@@ -369,6 +413,12 @@ export function encryptPaymentRequest(
     aesKey,
   );
   const envKey = encryptedAesKey.toString("base64");
+
+  console.log("[Netopia] Payment request encrypted successfully:", {
+    envKeyLength: envKey.length,
+    dataLength: data.length,
+    paymentUrl: getPaymentUrl(config),
+  });
 
   return {
     envKey,
@@ -410,13 +460,39 @@ export function decryptIpnResponse(
 
     // Decrypt env_key with RSA private key to get AES key
     const encryptedAesKey = Buffer.from(envKeyBase64, "base64");
-    const aesKey = crypto.privateDecrypt(
-      {
-        key: config.privateKey,
-        padding: crypto.constants.RSA_PKCS1_PADDING,
-      },
-      encryptedAesKey,
-    );
+
+    // ⚠️  Node.js 22+ deprecates RSA_PKCS1_PADDING for privateDecrypt.
+    //    We try PKCS1 first (for compatibility with existing encrypted data),
+    //    then fall back to OAEP if PKCS1 fails.
+    let aesKey: Buffer;
+    try {
+      aesKey = crypto.privateDecrypt(
+        {
+          key: config.privateKey,
+          padding: crypto.constants.RSA_PKCS1_PADDING,
+        },
+        encryptedAesKey,
+      );
+    } catch (pkcs1Error) {
+      console.warn(
+        "[Netopia] RSA_PKCS1_PADDING decryption failed, trying OAEP:",
+        pkcs1Error instanceof Error ? pkcs1Error.message : pkcs1Error,
+      );
+      try {
+        aesKey = crypto.privateDecrypt(
+          {
+            key: config.privateKey,
+            padding: crypto.constants.RSA_PKCS1_OAEP_PADDING,
+          },
+          encryptedAesKey,
+        );
+      } catch (oaepError) {
+        console.error("[Netopia] Both PKCS1 and OAEP padding failed for private decrypt");
+        throw new Error(
+          `RSA decryption failed: PKCS1 (${pkcs1Error instanceof Error ? pkcs1Error.message : "unknown"}), OAEP (${oaepError instanceof Error ? oaepError.message : "unknown"})`,
+        );
+      }
+    }
 
     // Decrypt data: first 16 bytes are IV, rest is ciphertext
     const encryptedPayload = Buffer.from(dataBase64, "base64");

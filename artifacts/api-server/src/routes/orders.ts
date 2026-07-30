@@ -372,7 +372,17 @@ router.patch("/orders/:id/status", async (req, res): Promise<void> => {
 router.post("/payments/netopia/callback", async (req: Request, res: Response): Promise<void> => {
   const { env_key, data } = req.body;
 
+  console.log("[Netopia IPN] Callback received:", {
+    hasEnvKey: !!env_key,
+    envKeyLength: env_key ? env_key.length : 0,
+    hasData: !!data,
+    dataLength: data ? data.length : 0,
+    contentType: req.headers["content-type"],
+    bodyKeys: Object.keys(req.body),
+  });
+
   if (!env_key || !data) {
+    console.error("[Netopia IPN] Missing env_key or data in callback body. Raw body:", req.body);
     res.set("Content-Type", "text/xml");
     res.status(400).send(
       buildIpnConfirmationXml({ type: "1", code: "1", message: "Missing env_key or data" }),
@@ -382,7 +392,16 @@ router.post("/payments/netopia/callback", async (req: Request, res: Response): P
 
   try {
     const netopiaConfig = getNetopiaConfig();
+    console.log("[Netopia IPN] Starting decryption...");
     const ipnResult = decryptIpnResponse(netopiaConfig, env_key, data);
+    console.log("[Netopia IPN] Decryption result:", {
+      status: ipnResult.status,
+      orderId: ipnResult.orderId,
+      transactionId: ipnResult.transactionId,
+      amount: ipnResult.amount,
+      currency: ipnResult.currency,
+      error: ipnResult.errorMessage,
+    });
 
     if (ipnResult.orderId) {
       // Find the order by netopiaOrderId
