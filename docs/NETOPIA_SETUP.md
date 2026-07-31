@@ -70,7 +70,7 @@ Copy `.env.example` to `.env` and fill in the values:
 | `APP_BASE_URL` | Public URL of your API (used for Netopia callback URLs) | `https://api.anksboutique.ro` |
 | `FRONTEND_URL` | Public URL of your frontend | `https://anksboutique.ro` |
 | `NETOPIA_MERCHANT_ID` | Your merchant ID from Netopia | `MERCHANT_12345` |
-| `NETOPIA_API_KEY` | Your Netopia API key/token for authentication (used as `<signature>` in payment XML) | `if4aeDyBGwfncloh9986Cth7JmYTrFA8fX3XRlrgXTZMWus_B3X9zx1Sie5N` |
+| `NETOPIA_API_KEY` | Your Netopia API key/token for newer JSON APIs; the legacy XML checkout uses `NETOPIA_MERCHANT_ID` as `<signature>` | `if4aeDyBGwfncloh9986Cth7JmYTrFA8fX3XRlrgXTZMWus_B3X9zx1Sie5N` |
 | `NETOPIA_PUBLIC_KEY_PATH` | Path to your Netopia RSA public key | `file:///etc/ssl/netopia/public.pem` |
 | `NETOPIA_PRIVATE_KEY_PATH` | Path to your Netopia RSA private key | `file:///etc/ssl/netopia/private.pem` |
 | `NETOPIA_SANDBOX` | Use sandbox environment | `true` (development) / `false` (production) |
@@ -133,6 +133,8 @@ If RSA keys are not configured, the system falls back to **stub mode** where:
   }
 }
 ```
+
+The submitted payment form also includes `cipher=aes-256-cbc` and the base64 IV as `iv`.
 
 ### POST /api/payments/netopia/callback — IPN Handler
 
