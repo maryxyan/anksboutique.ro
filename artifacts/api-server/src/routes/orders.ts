@@ -14,9 +14,9 @@ import {
   buildIpnConfirmationXml,
   loadConfigFromEnv,
   createSandboxStubConfig,
-  isConfigured,
-  hasValidKeys,
+  getNetopiaStartupDiagnostics,
 } from "../lib/netopia";
+import { logger } from "../lib/logger";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -150,7 +150,13 @@ function escapeHtml(str: string): string {
 function getNetopiaConfig() {
   try {
     return loadConfigFromEnv();
-  } catch {
+  } catch (error) {
+    logger.warn(
+      {
+        err: error,
+      },
+      "Falling back to sandbox Netopia stub config",
+    );
     return createSandboxStubConfig();
   }
 }
@@ -254,59 +260,92 @@ router.post("/orders", async (req, res): Promise<void> => {
   );
 
   const netopiaOrderId = `ANK-${Date.now()}`;
+  try {
+    const result = await db.transaction(async (tx) => {
+      const [order] = await tx
+        .insert(ordersTable)
+        .values({
+          ...orderData,
+          sessionId,
+          total: String(Math.round(total * 100) / 100),
+          netopiaOrderId,
+          paymentMethod: "card",
+        })
+        .returning();
 
-  const [order] = await db
-    .insert(ordersTable)
-    .values({
-      ...orderData,
-      sessionId,
-      total: String(Math.round(total * 100) / 100),
-      netopiaOrderId,
-      paymentMethod: "card",
-    })
-    .returning();
+      await tx.insert(orderItemsTable).values(
+        cartItems.map((r) => ({
+          orderId: order.id,
+          productId: r.cartItem.productId,
+          productTitle: r.product?.title ?? "Unknown",
+          productImage: r.product?.images?.[0] ?? null,
+          price: r.cartItem.price,
+          quantity: r.cartItem.quantity,
+          size: r.cartItem.size,
+        })),
+      );
 
-  // Insert order items
-  await db.insert(orderItemsTable).values(
-    cartItems.map((r) => ({
-      orderId: order.id,
-      productId: r.cartItem.productId,
-      productTitle: r.product?.title ?? "Unknown",
-      productImage: r.product?.images?.[0] ?? null,
-      price: r.cartItem.price,
-      quantity: r.cartItem.quantity,
-      size: r.cartItem.size,
-    })),
-  );
+      await tx.delete(cartItemsTable).where(eq(cartItemsTable.sessionId, sessionId));
 
-  // Clear cart
-  await db.delete(cartItemsTable).where(eq(cartItemsTable.sessionId, sessionId));
+      const netopiaConfig = getNetopiaConfig();
+      const paymentRequest = encryptPaymentRequest(netopiaConfig, {
+        orderId: netopiaOrderId,
+        amount: total.toFixed(2),
+        currency: "RON",
+        customerName: orderData.customerName,
+        customerEmail: orderData.customerEmail,
+        customerPhone: orderData.customerPhone,
+        billingAddress: orderData.shippingAddress,
+        billingCity: orderData.city,
+        billingCountry: "RO",
+        description: `Comanda #${order.id} - Anks Boutique (${cartItems.length} produse)`,
+      });
 
-  // Build Netopia payment request
-  const netopiaConfig = getNetopiaConfig();
-  const paymentRequest = encryptPaymentRequest(netopiaConfig, {
-    orderId: netopiaOrderId,
-    amount: total.toFixed(2),
-    currency: "RON",
-    customerName: orderData.customerName,
-    customerEmail: orderData.customerEmail,
-    customerPhone: orderData.customerPhone,
-    billingAddress: orderData.shippingAddress,
-    billingCity: orderData.city,
-    billingCountry: "RO",
-    description: `Comanda #${order.id} - Anks Boutique (${cartItems.length} produse)`,
-  });
+      return {
+        order,
+        paymentRequest,
+        netopiaConfig,
+      };
+    });
 
-  res.status(201).json({
-    orderId: order.id,
-    paymentUrl: paymentRequest.paymentUrl,
-    netopiaFormData: {
-      env_key: paymentRequest.envKey,
-      data: paymentRequest.data,
-      cipher: paymentRequest.cipher,
-      iv: paymentRequest.iv,
-    },
-  });
+    logger.info(
+      {
+        orderId: result.order.id,
+        netopiaOrderId,
+        paymentUrl: result.paymentRequest.paymentUrl,
+        netopia: getNetopiaStartupDiagnostics(result.netopiaConfig),
+      },
+      "Netopia payment request prepared",
+    );
+
+    res.status(201).json({
+      orderId: result.order.id,
+      paymentUrl: result.paymentRequest.paymentUrl,
+      netopiaFormData: {
+        env_key: result.paymentRequest.envKey,
+        data: result.paymentRequest.data,
+        cipher: result.paymentRequest.cipher,
+        iv: result.paymentRequest.iv,
+      },
+    });
+  } catch (error) {
+    logger.error(
+      {
+        err: error,
+        sessionId,
+        netopiaOrderId,
+        cartItemCount: cartItems.length,
+        total,
+      },
+      "Failed to create Netopia payment request",
+    );
+    res.status(500).json({
+      error:
+        error instanceof Error
+          ? error.message
+          : "Plata Netopia nu a putut fi pregatita.",
+    });
+  }
 });
 
 /**
@@ -373,18 +412,29 @@ router.patch("/orders/:id/status", async (req, res): Promise<void> => {
  */
 router.post("/payments/netopia/callback", async (req: Request, res: Response): Promise<void> => {
   const { env_key, data, cipher, iv } = req.body;
+  const requestId = (req as Request & { id?: string }).id;
 
-  console.log("[Netopia IPN] Callback received:", {
-    hasEnvKey: !!env_key,
-    envKeyLength: env_key ? env_key.length : 0,
-    hasData: !!data,
-    dataLength: data ? data.length : 0,
-    contentType: req.headers["content-type"],
-    bodyKeys: Object.keys(req.body),
-  });
+  logger.info(
+    {
+      requestId,
+      hasEnvKey: !!env_key,
+      envKeyLength: env_key ? env_key.length : 0,
+      hasData: !!data,
+      dataLength: data ? data.length : 0,
+      contentType: req.headers["content-type"],
+      bodyKeys: Object.keys(req.body),
+    },
+    "Netopia IPN callback received",
+  );
 
   if (!env_key || !data) {
-    console.error("[Netopia IPN] Missing env_key or data in callback body. Raw body:", req.body);
+    logger.warn(
+      {
+        requestId,
+        bodyKeys: Object.keys(req.body),
+      },
+      "Netopia IPN callback missing env_key or data",
+    );
     res.set("Content-Type", "text/xml");
     res.status(400).send(
       buildIpnConfirmationXml({ type: "1", code: "1", message: "Missing env_key or data" }),
@@ -394,19 +444,51 @@ router.post("/payments/netopia/callback", async (req: Request, res: Response): P
 
   try {
     const netopiaConfig = getNetopiaConfig();
-    console.log("[Netopia IPN] Starting decryption...");
+    logger.info(
+      {
+        requestId,
+        netopia: getNetopiaStartupDiagnostics(netopiaConfig),
+      },
+      "Starting Netopia IPN decryption",
+    );
     const ipnResult = decryptIpnResponse(netopiaConfig, env_key, data, cipher, iv);
-    console.log("[Netopia IPN] Decryption result:", {
-      status: ipnResult.status,
-      orderId: ipnResult.orderId,
-      transactionId: ipnResult.transactionId,
-      amount: ipnResult.amount,
-      currency: ipnResult.currency,
-      error: ipnResult.errorMessage,
-    });
+    logger.info(
+      {
+        requestId,
+        status: ipnResult.status,
+        orderId: ipnResult.orderId,
+        transactionId: ipnResult.transactionId,
+        amount: ipnResult.amount,
+        currency: ipnResult.currency,
+        errorMessage: ipnResult.errorMessage,
+        errorStage: ipnResult.errorStage,
+      },
+      "Netopia IPN decryption completed",
+    );
+
+    if (ipnResult.status === "error") {
+      logger.warn(
+        {
+          requestId,
+          errorMessage: ipnResult.errorMessage,
+          errorStage: ipnResult.errorStage,
+          envKeyLength: env_key.length,
+          dataLength: data.length,
+        },
+        "Netopia IPN decryption failed",
+      );
+      res.set("Content-Type", "text/xml");
+      res.status(200).send(
+        buildIpnConfirmationXml({
+          type: "1",
+          code: "1",
+          message: ipnResult.errorMessage ?? "Netopia IPN decryption failed",
+        }),
+      );
+      return;
+    }
 
     if (ipnResult.orderId) {
-      // Find the order by netopiaOrderId
       const [order] = await db
         .select()
         .from(ordersTable)
@@ -428,11 +510,6 @@ router.post("/payments/netopia/callback", async (req: Request, res: Response): P
               status: "cancelled",
             };
             break;
-          case "error":
-            updateData = {
-              paymentStatus: "error",
-            };
-            break;
           case "pending":
           default:
             updateData = {
@@ -448,7 +525,15 @@ router.post("/payments/netopia/callback", async (req: Request, res: Response): P
     res.set("Content-Type", "text/xml");
     res.send(buildIpnConfirmationXml());
   } catch (error) {
-    console.error("[Netopia IPN] Error processing callback:", error);
+    logger.error(
+      {
+        err: error,
+        requestId,
+        envKeyLength: env_key.length,
+        dataLength: data.length,
+      },
+      "Error processing Netopia IPN callback",
+    );
     res.set("Content-Type", "text/xml");
     res.send(
       buildIpnConfirmationXml({ type: "1", code: "1", message: "Internal server error" }),

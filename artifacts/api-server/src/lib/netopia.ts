@@ -22,6 +22,7 @@
 import * as crypto from "node:crypto";
 import * as fs from "node:fs";
 import * as path from "node:path";
+import { logger } from "./logger";
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -95,6 +96,8 @@ export interface IpnResponse {
   currency?: string;
   /** Error message if status is "error" */
   errorMessage?: string;
+  /** Internal stage where the error occurred */
+  errorStage?: "missing_private_key" | "rsa_decrypt" | "aes_decrypt" | "xml_parse" | "unsupported_cipher";
   /** Raw decrypted payload for debugging */
   rawPayload?: Record<string, unknown>;
 }
@@ -135,6 +138,57 @@ function fingerprintPublicComponent(keyMaterial: string, kind: "public" | "priva
   } catch {
     return null;
   }
+}
+
+function getKeySourceType(keyRaw: string): "empty" | "inline" | "path" {
+  if (!keyRaw.trim()) return "empty";
+  return keyRaw.includes("-----BEGIN") ? "inline" : "path";
+}
+
+function buildNetopiaLogContext(config: NetopiaConfig, extra: Record<string, unknown> = {}) {
+  const publicKeyFingerprint = config.publicKey
+    ? fingerprintPublicComponent(config.publicKey, "public")
+    : null;
+  const privateKeyFingerprint = config.privateKey
+    ? fingerprintPublicComponent(config.privateKey, "private")
+    : null;
+
+  return {
+    merchantIdPresent: Boolean(config.merchantId),
+    merchantIdLength: config.merchantId.length,
+    sandbox: config.sandbox,
+    paymentUrl: getPaymentUrl(config),
+    publicKeyLoaded: Boolean(config.publicKey),
+    publicKeyLength: config.publicKey.length,
+    publicKeyFingerprint,
+    publicKeyValid: publicKeyFingerprint !== null,
+    privateKeyLoaded: Boolean(config.privateKey),
+    privateKeyLength: config.privateKey.length,
+    privateKeyFingerprint,
+    privateKeyValid: privateKeyFingerprint !== null,
+    keyPairMatches:
+      publicKeyFingerprint !== null && privateKeyFingerprint !== null
+        ? publicKeyFingerprint === privateKeyFingerprint
+        : null,
+    ...extra,
+  };
+}
+
+function redactXmlForLog(xmlPayload: string): string {
+  return xmlPayload.replace(
+    /<first_name>.*?<\/first_name>|<last_name>.*?<\/last_name>|<email>.*?<\/email>|<mobile_phone>.*?<\/mobile_phone>|<address>.*?<\/address>/g,
+    "<redacted>...</redacted>",
+  );
+}
+
+function logNetopiaEvent(
+  level: "info" | "warn" | "error",
+  message: string,
+  context: Record<string, unknown>,
+  err?: unknown,
+): void {
+  const payload = err === undefined ? context : { ...context, err };
+  logger[level](payload, message);
 }
 
 export interface NetopiaStartupDiagnostics {
@@ -190,29 +244,35 @@ export function loadConfigFromEnv(): NetopiaConfig {
   const publicKey = resolveKey(publicKeyRaw);
   const privateKey = resolveKey(privateKeyRaw);
 
-  // ── Debug logging to diagnose key loading issues ────────────────────────
-  console.log({
-    merchantId: merchantId || "(empty — will cause errors)",
-    publicKeyLoaded: !!publicKey,
-    publicKeyLength: publicKey ? publicKey.length : 0,
-    publicKeySource: publicKeyRaw ? (publicKeyRaw.includes("-----BEGIN") ? "inline" : publicKeyRaw) : "(empty)",
-    privateKeyLoaded: !!privateKey,
-    privateKeyLength: privateKey ? privateKey.length : 0,
-    privateKeySource: privateKeyRaw ? (privateKeyRaw.includes("-----BEGIN") ? "inline" : privateKeyRaw) : "(empty)",
+  logNetopiaEvent("info", "Netopia config loaded", {
+    merchantIdPresent: Boolean(merchantId),
+    merchantIdLength: merchantId.length,
+    publicKeyLoaded: Boolean(publicKey),
+    publicKeyLength: publicKey.length,
+    publicKeySourceType: getKeySourceType(publicKeyRaw),
+    privateKeyLoaded: Boolean(privateKey),
+    privateKeyLength: privateKey.length,
+    privateKeySourceType: getKeySourceType(privateKeyRaw),
     sandbox,
-    apiKeyPresent: !!apiKey,
-    // ⚠️  NETOPIA_API_KEY is NOT used in the `<signature>` field — the signature
-    //    always uses NETOPIA_MERCHANT_ID. If you're seeing "Decriptarea datelor a eșuat",
-    //    double-check that keys are loaded correctly (both true above) and that
-    //    NETOPIA_MERCHANT_ID is the correct merchant signature.
+    apiKeyPresent: Boolean(apiKey),
+    signatureSource: "NETOPIA_MERCHANT_ID",
   });
 
   if (!publicKey && !privateKey) {
-    console.warn("[Netopia] No RSA keys configured — falling back to stub (unencrypted) mode. This is NOT suitable for production.");
+    logNetopiaEvent("warn", "Netopia RSA keys are missing; falling back to stub mode", {
+      merchantIdPresent: Boolean(merchantId),
+      sandbox,
+    });
   } else if (!publicKey) {
-    console.warn("[Netopia] PUBLIC KEY is empty — encryption will fail!");
+    logNetopiaEvent("warn", "Netopia public key is empty", {
+      merchantIdPresent: Boolean(merchantId),
+      sandbox,
+    });
   } else if (!privateKey) {
-    console.warn("[Netopia] PRIVATE KEY is empty — callback decryption will fail!");
+    logNetopiaEvent("warn", "Netopia private key is empty", {
+      merchantIdPresent: Boolean(merchantId),
+      sandbox,
+    });
   }
 
   return {
@@ -226,10 +286,6 @@ export function loadConfigFromEnv(): NetopiaConfig {
   };
 }
 
-/**
- * Create a default Netopia config for testing/development when
- * proper credentials are not yet configured.
- */
 export function createSandboxStubConfig(): NetopiaConfig {
   return {
     merchantId: "TEST_MERCHANT",
@@ -415,71 +471,90 @@ export function encryptPaymentRequest(
   config: NetopiaConfig,
   order: PaymentOrderData,
 ): PaymentRequestResult {
-  if (!config.publicKey) {
-    console.warn(
-      "[Netopia] No public key configured — using unencrypted stub mode. " +
-        "This will NOT work with Netopia's live/sandbox environment.",
+  try {
+    if (!config.publicKey) {
+      logNetopiaEvent("warn", "Netopia public key is missing; using stub payment payload", {
+        orderId: order.orderId,
+        paymentUrl: getPaymentUrl(config),
+      });
+      return {
+        envKey: Buffer.from(JSON.stringify({ cipher: "none", merchant: config.merchantId })).toString(
+          "base64",
+        ),
+        data: Buffer.from(JSON.stringify(order)).toString("base64"),
+        cipher: "aes-256-cbc",
+        iv: "",
+        paymentUrl: getPaymentUrl(config),
+      };
+    }
+
+    const xmlPayload = buildPaymentXml(config, order);
+    const redactedXml = redactXmlForLog(xmlPayload);
+
+    logNetopiaEvent("info", "Netopia payment XML prepared", {
+      orderId: order.orderId,
+      xmlByteLength: Buffer.byteLength(xmlPayload, "utf-8"),
+      xmlPreview: redactedXml,
+      paymentUrl: getPaymentUrl(config),
+    });
+
+    const aesKey = crypto.randomBytes(32);
+    const iv = crypto.randomBytes(16);
+
+    const cipher = crypto.createCipheriv("aes-256-cbc", aesKey, iv);
+    const encryptedPayload = Buffer.concat([cipher.update(xmlPayload, "utf-8"), cipher.final()]);
+
+    const data = encryptedPayload.toString("base64");
+    const ivBase64 = iv.toString("base64");
+
+    logNetopiaEvent("info", "Encrypting Netopia payment AES key", {
+      orderId: order.orderId,
+      padding: "RSA_PKCS1_PADDING",
+      paymentUrl: getPaymentUrl(config),
+    });
+
+    const encryptedAesKey = crypto.publicEncrypt(
+      {
+        key: config.publicKey,
+        padding: crypto.constants.RSA_PKCS1_PADDING,
+      },
+      aesKey,
     );
-    // Fallback for development: return unencrypted data (sandbox-only)
+    const envKey = encryptedAesKey.toString("base64");
+
+    logNetopiaEvent("info", "Netopia payment request encrypted", {
+      orderId: order.orderId,
+      envKeyLength: envKey.length,
+      dataLength: data.length,
+      ivLength: ivBase64.length,
+      paymentUrl: getPaymentUrl(config),
+    });
+
     return {
-      envKey: Buffer.from(JSON.stringify({ cipher: "none", merchant: config.merchantId })).toString(
-        "base64",
-      ),
-      data: Buffer.from(JSON.stringify(order)).toString("base64"),
+      envKey,
+      data,
       cipher: "aes-256-cbc",
-      iv: "",
+      iv: ivBase64,
       paymentUrl: getPaymentUrl(config),
     };
+  } catch (error) {
+    logNetopiaEvent(
+      "error",
+      "Netopia payment request failed",
+      {
+        orderId: order.orderId,
+        amount: order.amount,
+        currency: order.currency,
+        paymentUrl: getPaymentUrl(config),
+        hasPublicKey: Boolean(config.publicKey),
+        publicKeyLength: config.publicKey.length,
+      },
+      error,
+    );
+    throw new Error(
+      `Netopia payment request failed: ${error instanceof Error ? error.message : "unknown error"}`,
+    );
   }
-
-  // Build XML envelope
-  const xmlPayload = buildPaymentXml(config, order);
-
-  // Log the XML payload (without sensitive customer data) for debugging
-  const xmlLog = xmlPayload.replace(
-    /<first_name>.*?<\/first_name>|<last_name>.*?<\/last_name>|<email>.*?<\/email>|<mobile_phone>.*?<\/mobile_phone>|<address>.*?<\/address>/g,
-    "<redacted>...</redacted>",
-  );
-  console.log("[Netopia] Payment XML envelope:\n", xmlLog);
-  console.log("[Netopia] XML payload byte length:", Buffer.byteLength(xmlPayload, "utf-8"));
-
-  // Generate random 32-byte AES key
-  const aesKey = crypto.randomBytes(32);
-
-  // Generate random 16-byte IV
-  const iv = crypto.randomBytes(16);
-
-  // Encrypt XML payload with AES-256-CBC
-  const cipher = crypto.createCipheriv("aes-256-cbc", aesKey, iv);
-  const encryptedPayload = Buffer.concat([cipher.update(xmlPayload, "utf-8"), cipher.final()]);
-
-  const data = encryptedPayload.toString("base64");
-  const ivBase64 = iv.toString("base64");
-
-  // Encrypt AES key with RSA public key
-  console.log("[Netopia] Encrypting AES key with RSA public key (PKCS1 padding)...");
-  const encryptedAesKey = crypto.publicEncrypt(
-    {
-      key: config.publicKey,
-      padding: crypto.constants.RSA_PKCS1_PADDING,
-    },
-    aesKey,
-  );
-  const envKey = encryptedAesKey.toString("base64");
-
-  console.log("[Netopia] Payment request encrypted successfully:", {
-    envKeyLength: envKey.length,
-    dataLength: data.length,
-    paymentUrl: getPaymentUrl(config),
-  });
-
-  return {
-    envKey,
-    data,
-    cipher: "aes-256-cbc",
-    iv: ivBase64,
-    paymentUrl: getPaymentUrl(config),
-  };
 }
 
 /**
@@ -499,9 +574,15 @@ export function decryptIpnResponse(
 ): IpnResponse {
   try {
     if (!config.privateKey) {
-      // Dev fallback: try to parse as JSON directly
       try {
         const payload = JSON.parse(Buffer.from(dataBase64, "base64").toString());
+        logNetopiaEvent("info", "Netopia IPN decoded in stub mode", {
+          envKeyLength: envKeyBase64.length,
+          dataLength: dataBase64.length,
+          hasPrivateKey: false,
+          cipher: cipher ?? null,
+          ivLength: ivBase64?.length ?? 0,
+        });
         return {
           status: "paid",
           orderId: payload.order_id || payload.orderId,
@@ -509,18 +590,18 @@ export function decryptIpnResponse(
           currency: payload.currency || "RON",
         };
       } catch {
-        // Try parsing as XML
         const xml = Buffer.from(dataBase64, "base64").toString();
+        logNetopiaEvent("warn", "Netopia IPN stub mode fell back to XML parsing", {
+          envKeyLength: envKeyBase64.length,
+          dataLength: dataBase64.length,
+          hasPrivateKey: false,
+        });
         return parseIpnFromXml(config, xml);
       }
     }
 
-    // Decrypt env_key with RSA private key to get AES key
     const encryptedAesKey = Buffer.from(envKeyBase64, "base64");
 
-    // ⚠️  Node.js 22+ deprecates RSA_PKCS1_PADDING for privateDecrypt.
-    //    We try PKCS1 first (for compatibility with existing encrypted data),
-    //    then fall back to OAEP if PKCS1 fails.
     let aesKey: Buffer;
     try {
       aesKey = crypto.privateDecrypt(
@@ -531,9 +612,17 @@ export function decryptIpnResponse(
         encryptedAesKey,
       );
     } catch (pkcs1Error) {
-      console.warn(
-        "[Netopia] RSA_PKCS1_PADDING decryption failed, trying OAEP:",
-        pkcs1Error instanceof Error ? pkcs1Error.message : pkcs1Error,
+      logNetopiaEvent(
+        "warn",
+        "Netopia RSA PKCS1 private decrypt failed; retrying OAEP",
+        {
+          envKeyLength: envKeyBase64.length,
+          dataLength: dataBase64.length,
+          cipher: cipher ?? null,
+          ivLength: ivBase64?.length ?? 0,
+          hasPrivateKey: Boolean(config.privateKey),
+        },
+        pkcs1Error,
       );
       try {
         aesKey = crypto.privateDecrypt(
@@ -544,10 +633,22 @@ export function decryptIpnResponse(
           encryptedAesKey,
         );
       } catch (oaepError) {
-        console.error("[Netopia] Both PKCS1 and OAEP padding failed for private decrypt");
-        throw new Error(
+        const error = new Error(
           `RSA decryption failed: PKCS1 (${pkcs1Error instanceof Error ? pkcs1Error.message : "unknown"}), OAEP (${oaepError instanceof Error ? oaepError.message : "unknown"})`,
         );
+        logNetopiaEvent(
+          "error",
+          "Netopia RSA private decrypt failed",
+          {
+            envKeyLength: envKeyBase64.length,
+            dataLength: dataBase64.length,
+            cipher: cipher ?? null,
+            ivLength: ivBase64?.length ?? 0,
+            hasPrivateKey: Boolean(config.privateKey),
+          },
+          error,
+        );
+        throw error;
       }
     }
 
@@ -556,7 +657,19 @@ export function decryptIpnResponse(
     const ciphertext = ivBase64 ? encryptedPayload : encryptedPayload.subarray(16);
 
     if (cipher && cipher !== "aes-256-cbc") {
-      throw new Error(`Unsupported cipher: ${cipher}`);
+      const error = new Error(`Unsupported cipher: ${cipher}`);
+      logNetopiaEvent(
+        "error",
+        "Netopia IPN used unsupported cipher",
+        {
+          envKeyLength: envKeyBase64.length,
+          dataLength: dataBase64.length,
+          cipher,
+          ivLength: ivBase64?.length ?? 0,
+        },
+        error,
+      );
+      throw error;
     }
 
     const decipher = crypto.createDecipheriv("aes-256-cbc", aesKey, iv);
@@ -566,34 +679,26 @@ export function decryptIpnResponse(
     const xml = decrypted.toString("utf-8");
     return parseIpnFromXml(config, xml);
   } catch (error) {
+    logNetopiaEvent(
+      "error",
+      "Netopia IPN decryption failed",
+      {
+        envKeyLength: envKeyBase64.length,
+        dataLength: dataBase64.length,
+        cipher: cipher ?? null,
+        ivLength: ivBase64?.length ?? 0,
+        hasPrivateKey: Boolean(config.privateKey),
+      },
+      error,
+    );
     return {
       status: "error",
       errorMessage: error instanceof Error ? error.message : "Decryption failed",
+      errorStage: "rsa_decrypt",
     };
   }
 }
 
-// ── XML IPN Parsing ──────────────────────────────────────────────────────────
-
-/**
- * Parse a Netopia IPN XML response into a structured result.
- *
- * Netopia IPN XML format:
- * ```xml
- * <?xml version="1.0" encoding="UTF-8"?>
- * <crc>
- *   <order id="ORDER_ID">
- *     <signature>MERCHANT_ID</signature>
- *     <status>paid|canceled|confirmed|pending</status>
- *     <transaction id="TRANSACTION_ID">...</transaction>
- *     <invoice>
- *       <amount>...</amount>
- *       <currency>...</currency>
- *     </invoice>
- *   </order>
- * </crc>
- * ```
- */
 function parseIpnFromXml(config: NetopiaConfig, xml: string): IpnResponse {
   const parsed = parseSimpleXml(xml);
   if (!parsed) {
