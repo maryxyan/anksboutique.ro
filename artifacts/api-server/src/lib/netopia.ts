@@ -110,21 +110,38 @@ const LIVE_PAYMENT_URL = "https://secure.mobilpay.ro";
 // ── Configuration ────────────────────────────────────────────────────────────
 
 function resolveKey(keyRaw: string): string {
-  if (!keyRaw) return "";
-  let cleanPath = keyRaw;
+  if (!keyRaw.trim()) return "";
+
+  if (keyRaw.includes("-----BEGIN")) {
+    return keyRaw.trim();
+  }
+
+  let cleanPath = keyRaw.trim();
   if (cleanPath.startsWith("file://")) {
     cleanPath = cleanPath.slice(7);
   }
   if (fs.existsSync(cleanPath)) {
     return fs.readFileSync(cleanPath, "utf-8").trim();
   }
-  if (!cleanPath.includes("-----BEGIN")) {
-    const resolved = path.resolve(process.cwd(), cleanPath);
-    if (fs.existsSync(resolved)) {
-      return fs.readFileSync(resolved, "utf-8").trim();
-    }
+
+  const resolved = path.resolve(process.cwd(), cleanPath);
+  if (fs.existsSync(resolved)) {
+    return fs.readFileSync(resolved, "utf-8").trim();
   }
+
   return keyRaw.trim();
+}
+
+function loadKeyFromEnv(pemRaw: string, pathRaw: string): { value: string; sourceType: "empty" | "pem" | "path" } {
+  if (pemRaw.trim()) {
+    return { value: pemRaw.trim(), sourceType: "pem" };
+  }
+
+  if (pathRaw.trim()) {
+    return { value: resolveKey(pathRaw), sourceType: "path" };
+  }
+
+  return { value: "", sourceType: "empty" };
 }
 
 function fingerprintPublicComponent(keyMaterial: string, kind: "public" | "private"): string | null {
@@ -237,22 +254,32 @@ export function getNetopiaStartupDiagnostics(config: NetopiaConfig): NetopiaStar
 export function loadConfigFromEnv(): NetopiaConfig {
   const sandbox = process.env["NETOPIA_SANDBOX"] !== "false";
   const merchantId = process.env["NETOPIA_MERCHANT_ID"] ?? "";
+  const publicKeyPemRaw = process.env["NETOPIA_PUBLIC_KEY_PEM"] ?? "";
   const publicKeyRaw = process.env["NETOPIA_PUBLIC_KEY_PATH"] ?? "";
+  const privateKeyPemRaw = process.env["NETOPIA_PRIVATE_KEY_PEM"] ?? "";
   const privateKeyRaw = process.env["NETOPIA_PRIVATE_KEY_PATH"] ?? "";
   const apiKey = process.env["NETOPIA_API_KEY"] || undefined;
 
-  const publicKey = resolveKey(publicKeyRaw);
-  const privateKey = resolveKey(privateKeyRaw);
+  const publicKeySource = loadKeyFromEnv(publicKeyPemRaw, publicKeyRaw);
+  const privateKeySource = loadKeyFromEnv(privateKeyPemRaw, privateKeyRaw);
+  const publicKey = publicKeySource.value;
+  const privateKey = privateKeySource.value;
+  const publicKeyFingerprint = publicKey ? fingerprintPublicComponent(publicKey, "public") : null;
+  const privateKeyFingerprint = privateKey ? fingerprintPublicComponent(privateKey, "private") : null;
 
   logNetopiaEvent("info", "Netopia config loaded", {
     merchantIdPresent: Boolean(merchantId),
     merchantIdLength: merchantId.length,
     publicKeyLoaded: Boolean(publicKey),
     publicKeyLength: publicKey.length,
-    publicKeySourceType: getKeySourceType(publicKeyRaw),
+    publicKeySourceType: publicKeySource.sourceType,
+    publicKeyPathSourceType: getKeySourceType(publicKeyRaw),
     privateKeyLoaded: Boolean(privateKey),
     privateKeyLength: privateKey.length,
-    privateKeySourceType: getKeySourceType(privateKeyRaw),
+    privateKeySourceType: privateKeySource.sourceType,
+    privateKeyPathSourceType: getKeySourceType(privateKeyRaw),
+    publicKeyValid: publicKeyFingerprint !== null,
+    privateKeyValid: privateKeyFingerprint !== null,
     sandbox,
     apiKeyPresent: Boolean(apiKey),
     signatureSource: "NETOPIA_MERCHANT_ID",
@@ -273,6 +300,24 @@ export function loadConfigFromEnv(): NetopiaConfig {
       merchantIdPresent: Boolean(merchantId),
       sandbox,
     });
+  }
+
+  if (!sandbox) {
+    if (!merchantId.trim()) {
+      throw new Error(
+        "NETOPIA_MERCHANT_ID is required when NETOPIA_SANDBOX is false.",
+      );
+    }
+    if (!publicKey || publicKeyFingerprint === null) {
+      throw new Error(
+        "Netopia public key is missing or invalid. Set NETOPIA_PUBLIC_KEY_PEM or NETOPIA_PUBLIC_KEY_PATH to a valid PEM key.",
+      );
+    }
+    if (!privateKey || privateKeyFingerprint === null) {
+      throw new Error(
+        "Netopia private key is missing or invalid. Set NETOPIA_PRIVATE_KEY_PEM or NETOPIA_PRIVATE_KEY_PATH to a valid PEM key.",
+      );
+    }
   }
 
   return {
