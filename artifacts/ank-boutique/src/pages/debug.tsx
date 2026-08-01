@@ -1,8 +1,43 @@
 import { Helmet } from "react-helmet-async";
 import { Layout } from "@/components/layout/Layout";
 import { Link } from "wouter";
+import { useEffect, useState } from "react";
+
+function formatStatus(status: boolean | null | undefined) {
+  if (status === true) return "Da";
+  if (status === false) return "Nu";
+  return "Necunoscut";
+}
 
 export default function Debug() {
+  const [netopiaStatus, setNetopiaStatus] = useState<any>(null);
+  const [healthStatus, setHealthStatus] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchDiagnostics() {
+      try {
+        const [netopiaRes, healthRes] = await Promise.all([
+          fetch("/api/debug/netopia-config"),
+          fetch("/api/healthz"),
+        ]);
+
+        const netopiaJson = netopiaRes.ok ? await netopiaRes.json() : { error: await netopiaRes.text() };
+        const healthJson = healthRes.ok ? await healthRes.json() : { error: await healthRes.text() };
+
+        setNetopiaStatus(netopiaJson);
+        setHealthStatus(healthJson);
+      } catch (fetchError) {
+        setError(fetchError instanceof Error ? fetchError.message : String(fetchError));
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchDiagnostics();
+  }, []);
+
   return (
     <>
       <Helmet>
@@ -15,35 +50,78 @@ export default function Debug() {
           <div className="max-w-3xl mx-auto space-y-8">
             <div className="text-center">
               <p className="text-sm uppercase tracking-[0.4em] text-muted-foreground mb-4">Diagnostică</p>
-              <h1 className="text-4xl md:text-5xl font-serif">Verificare Netopia</h1>
+              <h1 className="text-4xl md:text-5xl font-serif">Verificare sistem</h1>
               <p className="mt-4 text-muted-foreground">
-                Apasă linkul de mai jos pentru a vedea starea actuală a configurației Netopia pe server.
+                Această pagină verifică starea Netopia și starea API-ului.
               </p>
             </div>
 
-            <div className="rounded-3xl border border-border bg-background/80 p-8 shadow-sm">
-              <h2 className="text-xl font-semibold mb-4">Endpoint de diagnostic</h2>
-              <p className="text-sm text-muted-foreground mb-6">
-                Acesta verifică dacă serverul folosește modul de producție și dacă cheile Netopia sunt încărcate corect.
-              </p>
+            <div className="grid gap-8 lg:grid-cols-2">
+              <div className="rounded-3xl border border-border bg-background/80 p-8 shadow-sm">
+                <h2 className="text-xl font-semibold mb-4">Netopia</h2>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Diagnostic rapid pentru configurația Netopia de pe server.
+                </p>
 
-              <a
-                href="/api/debug/netopia-config"
-                className="inline-flex items-center justify-center rounded-full bg-foreground px-6 py-4 text-sm font-semibold text-background transition hover:bg-foreground/90"
-              >
-                Verifică configurația Netopia
-              </a>
+                <a
+                  href="/api/debug/netopia-config"
+                  className="inline-flex items-center justify-center rounded-full bg-foreground px-6 py-4 text-sm font-semibold text-background transition hover:bg-foreground/90"
+                >
+                  Verifică configurația Netopia
+                </a>
 
-              <p className="mt-6 text-xs text-muted-foreground">
-                Dacă primești un răspuns JSON, atunci codul de diagnostic rulează corect.
-              </p>
+                <div className="mt-6 space-y-2 text-sm text-muted-foreground">
+                  <div>
+                    <strong>Sandbox:</strong> {formatStatus(netopiaStatus?.sandbox)}
+                  </div>
+                  <div>
+                    <strong>NODE_ENV:</strong> {netopiaStatus?.nodeEnv ?? "Necunoscut"}
+                  </div>
+                  <div>
+                    <strong>Public key valid:</strong> {formatStatus(netopiaStatus?.publicKeyValid)}
+                  </div>
+                  <div>
+                    <strong>Private key valid:</strong> {formatStatus(netopiaStatus?.privateKeyValid)}
+                  </div>
+                </div>
+              </div>
+
+              <div className="rounded-3xl border border-border bg-background/80 p-8 shadow-sm">
+                <h2 className="text-xl font-semibold mb-4">API Health</h2>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Endpoint de sănătate pentru API.
+                </p>
+
+                <a
+                  href="/api/healthz"
+                  className="inline-flex items-center justify-center rounded-full bg-foreground px-6 py-4 text-sm font-semibold text-background transition hover:bg-foreground/90"
+                >
+                  Verifică starea API
+                </a>
+
+                <div className="mt-6 space-y-2 text-sm text-muted-foreground">
+                  <div>
+                    <strong>Status:</strong> {healthStatus?.status ?? "Necunoscut"}
+                  </div>
+                  {healthStatus?.error ? (
+                    <div className="text-red-600">{healthStatus.error}</div>
+                  ) : null}
+                </div>
+              </div>
             </div>
 
             <div className="rounded-3xl border border-border bg-muted p-8">
-              <h2 className="text-xl font-semibold mb-3">Notă</h2>
-              <p className="text-sm text-muted-foreground">
-                Dacă nu vezi această pagină sau endpointul returnează eroare, asigură-te că serverul a fost reconstruit și repornit cu ultima versiune a codului.
-              </p>
+              <h2 className="text-xl font-semibold mb-3">Stare curentă</h2>
+              {loading ? (
+                <p className="text-sm text-muted-foreground">Se încarcă diagnosticul...</p>
+              ) : error ? (
+                <p className="text-sm text-red-600">Eroare: {error}</p>
+              ) : (
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <p>Diagnoza a fost executată. Dacă apare o problemă, verifică pagina de backend sau restartul serverului.</p>
+                </div>
+              )}
+
               <Link href="/" className="mt-4 inline-block text-sm font-medium text-foreground underline">
                 Înapoi la pagina principală
               </Link>
