@@ -71,7 +71,9 @@ Copy `.env.example` to `.env` and fill in the values:
 | `FRONTEND_URL` | Public URL of your frontend | `https://anksboutique.ro` |
 | `NETOPIA_MERCHANT_ID` | Your merchant ID from Netopia | `MERCHANT_12345` |
 | `NETOPIA_API_KEY` | Your Netopia API key/token for newer JSON APIs; the legacy XML checkout uses `NETOPIA_MERCHANT_ID` as `<signature>` | `if4aeDyBGwfncloh9986Cth7JmYTrFA8fX3XRlrgXTZMWus_B3X9zx1Sie5N` |
+| `NETOPIA_PUBLIC_KEY_PEM` | Inline Netopia RSA public key in PEM format. Takes precedence over `NETOPIA_PUBLIC_KEY_PATH`. | `-----BEGIN PUBLIC KEY-----...` |
 | `NETOPIA_PUBLIC_KEY_PATH` | Path to your Netopia RSA public key | `file:///etc/ssl/netopia/public.pem` |
+| `NETOPIA_PRIVATE_KEY_PEM` | Inline Netopia RSA private key in PEM format. Takes precedence over `NETOPIA_PRIVATE_KEY_PATH`. | `-----BEGIN PRIVATE KEY-----...` |
 | `NETOPIA_PRIVATE_KEY_PATH` | Path to your Netopia RSA private key | `file:///etc/ssl/netopia/private.pem` |
 | `NETOPIA_SANDBOX` | Use sandbox environment | `true` (development) / `false` (production) |
 
@@ -84,10 +86,16 @@ NETOPIA_PUBLIC_KEY_PATH="file:///C:/Keys/netopia-public.pem"
 NETOPIA_PRIVATE_KEY_PATH="file:///C:/Keys/netopia-private.pem"
 ```
 
-Or you can paste the raw key content directly (though file paths are recommended for security):
+Or you can store the PEM directly in the environment:
 
 ```
-NETOPIA_PUBLIC_KEY_PATH="-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA..."
+NETOPIA_PUBLIC_KEY_PEM="-----BEGIN PUBLIC KEY-----
+MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...
+-----END PUBLIC KEY-----"
+
+NETOPIA_PRIVATE_KEY_PEM="-----BEGIN PRIVATE KEY-----
+MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQ...
+-----END PRIVATE KEY-----"
 ```
 
 ## Development / Sandbox Mode

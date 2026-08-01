@@ -145,19 +145,33 @@ function escapeHtml(str: string): string {
 }
 
 /**
- * Load the Netopia config with a fallback to sandbox stub.
+ * Load the Netopia config.
+ *
+ * In production (`NETOPIA_SANDBOX=false`), failures must be treated as fatal
+ * so we do not send stub-style payment payloads to the live Netopia endpoint.
  */
 function getNetopiaConfig() {
   try {
     return loadConfigFromEnv();
   } catch (error) {
-    logger.warn(
+    logger.error(
       {
         err: error,
       },
-      "Falling back to sandbox Netopia stub config",
+      "Failed to load Netopia config",
     );
-    return createSandboxStubConfig();
+
+    if (process.env["NETOPIA_SANDBOX"] === "true") {
+      logger.warn(
+        {
+          err: error,
+        },
+        "Falling back to sandbox Netopia stub config because NETOPIA_SANDBOX=true",
+      );
+      return createSandboxStubConfig();
+    }
+
+    throw error;
   }
 }
 
