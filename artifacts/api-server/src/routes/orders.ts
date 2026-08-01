@@ -596,4 +596,31 @@ router.get("/payments/netopia/return", async (req: Request, res: Response): Prom
   }
 });
 
+router.get("/debug/netopia-config", (_req: Request, res: Response): void => {
+  try {
+    const netopiaConfig = loadConfigFromEnv();
+    const diagnostics = getNetopiaStartupDiagnostics(netopiaConfig);
+
+    res.json({
+      sandbox: diagnostics.sandbox,
+      sandboxRaw: process.env["NETOPIA_SANDBOX"] ?? null,
+      nodeEnv: process.env["NODE_ENV"] ?? null,
+      merchantIdPresent: Boolean(netopiaConfig.merchantId),
+      merchantIdLength: netopiaConfig.merchantId.length,
+      paymentUrl: diagnostics.paymentUrl,
+      publicKeyLoaded: Boolean(netopiaConfig.publicKey),
+      privateKeyLoaded: Boolean(netopiaConfig.privateKey),
+      publicKeyValid: diagnostics.publicKeyValid,
+      privateKeyValid: diagnostics.privateKeyValid,
+      keyPairMatches: diagnostics.keyPairMatches,
+    });
+  } catch (error) {
+    logger.error({ err: error }, "Failed to load Netopia debug config");
+    res.status(500).json({
+      error: "Failed to load Netopia config",
+      details: error instanceof Error ? error.message : String(error),
+    });
+  }
+});
+
 export default router;

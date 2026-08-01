@@ -252,7 +252,11 @@ export function getNetopiaStartupDiagnostics(config: NetopiaConfig): NetopiaStar
  *    with "Decriptarea datelor a eșuat" (data decryption failed).
  */
 export function loadConfigFromEnv(): NetopiaConfig {
-  const sandbox = process.env["NETOPIA_SANDBOX"] !== "false";
+  const sandboxRaw = process.env["NETOPIA_SANDBOX"]?.trim();
+  const nodeEnv = process.env["NODE_ENV"]?.trim() ?? "";
+  const sandbox = sandboxRaw
+    ? sandboxRaw.toLowerCase() !== "false"
+    : nodeEnv !== "production";
   const merchantId = process.env["NETOPIA_MERCHANT_ID"] ?? "";
   const publicKeyPemRaw = process.env["NETOPIA_PUBLIC_KEY_PEM"] ?? "";
   const publicKeyRaw = process.env["NETOPIA_PUBLIC_KEY_PATH"] ?? "";
@@ -281,6 +285,8 @@ export function loadConfigFromEnv(): NetopiaConfig {
     publicKeyValid: publicKeyFingerprint !== null,
     privateKeyValid: privateKeyFingerprint !== null,
     sandbox,
+    sandboxRaw: sandboxRaw ?? "",
+    nodeEnv,
     apiKeyPresent: Boolean(apiKey),
     signatureSource: "NETOPIA_MERCHANT_ID",
   });
@@ -518,6 +524,12 @@ export function encryptPaymentRequest(
 ): PaymentRequestResult {
   try {
     if (!config.publicKey) {
+      if (!config.sandbox) {
+        throw new Error(
+          "Netopia public key is required in production, but none is configured. Aborting payment request.",
+        );
+      }
+
       logNetopiaEvent("warn", "Netopia public key is missing; using stub payment payload", {
         orderId: order.orderId,
         paymentUrl: getPaymentUrl(config),
@@ -619,6 +631,22 @@ export function decryptIpnResponse(
 ): IpnResponse {
   try {
     if (!config.privateKey) {
+      if (!config.sandbox) {
+        const message = "Netopia private key is required in production for IPN callback decryption.";
+        logNetopiaEvent(
+          "error",
+          message,
+          {
+            envKeyLength: envKeyBase64.length,
+            dataLength: dataBase64.length,
+            hasPrivateKey: false,
+            cipher: cipher ?? null,
+            ivLength: ivBase64?.length ?? 0,
+          },
+        );
+        throw new Error(message);
+      }
+
       try {
         const payload = JSON.parse(Buffer.from(dataBase64, "base64").toString());
         logNetopiaEvent("info", "Netopia IPN decoded in stub mode", {

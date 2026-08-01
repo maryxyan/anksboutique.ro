@@ -147,13 +147,20 @@ if (!netopiaDiagnostics.publicKeyValid || !netopiaDiagnostics.privateKeyValid) {
     },
     "Netopia keys are not fully loadable",
   );
-} else if (netopiaDiagnostics.keyPairMatches === false) {
-  logger.warn(
-    {
-      netopia: netopiaDiagnostics,
-    },
-    "Netopia public/private key fingerprints do not match",
-  );
+}
+
+if (!netopiaDiagnostics.sandbox) {
+  if (!netopiaDiagnostics.publicKeyValid || !netopiaDiagnostics.privateKeyValid) {
+    throw new Error(
+      "Invalid Netopia production configuration: public/private RSA keys must be configured and valid when NETOPIA_SANDBOX=false.",
+    );
+  }
+
+  if (netopiaDiagnostics.keyPairMatches === false) {
+    throw new Error(
+      "Invalid Netopia production configuration: Netopia public/private key pair fingerprints do not match.",
+    );
+  }
 }
 
 await ensureLabelsSeeded();
