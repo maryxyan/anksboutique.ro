@@ -1,7 +1,8 @@
 import pino, { type TransportTargetOptions } from "pino";
 
 const isProduction = process.env.NODE_ENV === "production";
-const logFilePath = process.env.LOG_FILE_PATH?.trim();
+const defaultLogFilePath = isProduction ? "./logs/api-server.log" : "";
+const logFilePath = process.env.LOG_FILE_PATH?.trim() || defaultLogFilePath;
 
 const transportTargets: TransportTargetOptions[] = [];
 
