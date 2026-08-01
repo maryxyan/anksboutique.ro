@@ -110,6 +110,22 @@ if (loadedEnvFiles.length > 0) {
   console.log(`[bootstrap] Loaded env file(s): ${loadedEnvFiles.join(", ")}`);
 }
 
+console.log(
+  JSON.stringify(
+    {
+      bootstrap: true,
+      cwd: process.cwd(),
+      loadedEnvFiles,
+      nodeEnv: process.env["NODE_ENV"] ?? null,
+      netopiaSandbox: process.env["NETOPIA_SANDBOX"] ?? null,
+      appBaseUrl: process.env["APP_BASE_URL"] ?? null,
+      logFilePath: process.env["LOG_FILE_PATH"] ?? null,
+    },
+    null,
+    2,
+  ),
+);
+
 const [{ default: app }, { logger }, { getNetopiaStartupDiagnostics, loadConfigFromEnv }, { ensureLabelsSeeded }] =
   await Promise.all([
     import("./app"),

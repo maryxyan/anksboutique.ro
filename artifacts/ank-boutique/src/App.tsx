@@ -30,6 +30,7 @@ const AdminOrders = lazy(() => import("@/pages/admin/orders"));
 const AdminInventory = lazy(() => import("@/pages/admin/inventory"));
 const AdminCategories = lazy(() => import("@/pages/admin/categories"));
 const AdminLabels = lazy(() => import("@/pages/admin/labels"));
+const Debug = lazy(() => import("@/pages/debug"));
 const Retur = lazy(() => import("@/pages/retur"));
 const LivrareRetururi = lazy(() => import("@/pages/livrare"));
 const GhidMarimi = lazy(() => import("@/pages/ghid-marimi"));
@@ -98,6 +99,7 @@ function Router() {
       <Route path="/admin/inventory"><SuspenseWrapper Component={AdminInventory} /></Route>
       <Route path="/admin/categories"><SuspenseWrapper Component={AdminCategories} /></Route>
       <Route path="/admin/labels"><SuspenseWrapper Component={AdminLabels} /></Route>
+      <Route path="/debug"><SuspenseWrapper Component={Debug} /></Route>
 
       <Route component={NotFound} />
     </Switch>
