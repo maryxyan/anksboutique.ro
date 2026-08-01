@@ -17,6 +17,7 @@ import {
   getNetopiaStartupDiagnostics,
 } from "../lib/netopia";
 import { logger } from "../lib/logger";
+import { spawn } from "node:child_process";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -620,6 +621,44 @@ router.get("/debug/netopia-config", (_req: Request, res: Response): void => {
       error: "Failed to load Netopia config",
       details: error instanceof Error ? error.message : String(error),
     });
+  }
+});
+
+router.post("/debug/restart-api", async (_req: Request, res: Response): Promise<void> => {
+  if (process.env["DEBUG_ALLOW_SCRIPT_RUN"] !== "true") {
+    res.status(403).json({ error: "Script execution is disabled." });
+    return;
+  }
+
+  const repoRoot = path.resolve(__dirname, "../../../..");
+  const command = "pnpm";
+  const args = ["--dir", repoRoot, "--filter", "@workspace/scripts", "run", "restart-api"];
+
+  try {
+    const child = spawn(command, args, {
+      cwd: repoRoot,
+      shell: true,
+      detached: true,
+      stdio: "ignore",
+    });
+
+    child.unref();
+
+    res.status(202).json({
+      status: "restart-scheduled",
+      message: "Restart script has been triggered.",
+    });
+  } catch (error) {
+    logger.error(
+      {
+        err: error,
+        repoRoot,
+        command,
+        args,
+      },
+      "Failed to start API restart script",
+    );
+    res.status(500).json({ error: String(error) });
   }
 });
 

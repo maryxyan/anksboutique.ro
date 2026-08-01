@@ -14,6 +14,8 @@ export default function Debug() {
   const [healthStatus, setHealthStatus] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [restartStatus, setRestartStatus] = useState<string | null>(null);
+  const [restartLoading, setRestartLoading] = useState(false);
 
   useEffect(() => {
     async function fetchDiagnostics() {
@@ -37,6 +39,30 @@ export default function Debug() {
 
     fetchDiagnostics();
   }, []);
+
+  async function handleRestartApi() {
+    setRestartLoading(true);
+    setRestartStatus(null);
+
+    try {
+      const response = await fetch("/api/debug/restart-api", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+
+      if (!response.ok) {
+        const text = await response.text();
+        throw new Error(text || `HTTP ${response.status}`);
+      }
+
+      const data = await response.json();
+      setRestartStatus(data.message ?? "Restart command triggered.");
+    } catch (restartError) {
+      setRestartStatus(`Eroare: ${restartError instanceof Error ? restartError.message : String(restartError)}`);
+    } finally {
+      setRestartLoading(false);
+    }
+  }
 
   return (
     <>
@@ -84,6 +110,11 @@ export default function Debug() {
                     <strong>Private key valid:</strong> {formatStatus(netopiaStatus?.privateKeyValid)}
                   </div>
                 </div>
+                {netopiaStatus?.error ? (
+                  <div className="mt-4 rounded-xl bg-red-50 border border-red-200 p-4 text-sm text-red-700">
+                    <strong>Netopia fetch error:</strong> {String(netopiaStatus.error)}
+                  </div>
+                ) : null}
               </div>
 
               <div className="rounded-3xl border border-border bg-background/80 p-8 shadow-sm">
@@ -121,6 +152,20 @@ export default function Debug() {
                   <p>Diagnoza a fost executată. Dacă apare o problemă, verifică pagina de backend sau restartul serverului.</p>
                 </div>
               )}
+
+              <div className="mt-6 space-y-3">
+                <button
+                  type="button"
+                  onClick={handleRestartApi}
+                  disabled={restartLoading}
+                  className="inline-flex items-center justify-center rounded-full bg-foreground px-6 py-3 text-sm font-semibold text-background transition hover:bg-foreground/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {restartLoading ? "Restart în curs..." : "Repornește API server"}
+                </button>
+                {restartStatus ? (
+                  <p className="text-sm text-muted-foreground">{restartStatus}</p>
+                ) : null}
+              </div>
 
               <Link href="/" className="mt-4 inline-block text-sm font-medium text-foreground underline">
                 Înapoi la pagina principală

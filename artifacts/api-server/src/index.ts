@@ -146,6 +146,37 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
+const pidFilePath = path.resolve(process.cwd(), "api-server.pid");
+
+function writePidFile(): void {
+  try {
+    fs.writeFileSync(pidFilePath, String(process.pid), "utf-8");
+  } catch (err) {
+    console.warn("Failed to write API server pid file:", err);
+  }
+}
+
+function removePidFile(): void {
+  try {
+    if (fs.existsSync(pidFilePath)) {
+      fs.unlinkSync(pidFilePath);
+    }
+  } catch (err) {
+    console.warn("Failed to remove API server pid file:", err);
+  }
+}
+
+writePidFile();
+process.on("exit", removePidFile);
+process.on("SIGINT", () => {
+  removePidFile();
+  process.exit(0);
+});
+process.on("SIGTERM", () => {
+  removePidFile();
+  process.exit(0);
+});
+
 const netopiaConfig = loadConfigFromEnv();
 const netopiaDiagnostics = getNetopiaStartupDiagnostics(netopiaConfig);
 
