@@ -67,6 +67,6 @@ jobs:
             **/.git/**
             **/.idea/**
             **/.env
-      **/*.log
+            **/*.log
             **/.gitkeep
             **/error_log
