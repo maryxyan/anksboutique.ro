@@ -2,6 +2,8 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
+console.log("API VERSION: 2026-08-02 A");
+
 type EnvMap = Record<string, string>;
 
 const loadedFromFile = new Set<string>();

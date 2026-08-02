@@ -303,7 +303,8 @@ router.post("/orders", async (req, res): Promise<void> => {
       await tx.delete(cartItemsTable).where(eq(cartItemsTable.sessionId, sessionId));
 
       const netopiaConfig = getNetopiaConfig();
-      console.log("========== NEW NETOPIA ENCRYPTION CODE ==========");
+      console.log("========== NETOPIA NEW ROUTE ==========");
+      console.log("encryptPaymentRequest is being called");
       console.log({
         merchantId: netopiaConfig.merchantId,
         sandbox: netopiaConfig.sandbox,
@@ -321,6 +322,8 @@ router.post("/orders", async (req, res): Promise<void> => {
         billingCountry: "RO",
         description: `Comanda #${order.id} - Anks Boutique (${cartItems.length} produse)`,
       });
+
+      console.log(paymentRequest);
 
       return {
         order,
