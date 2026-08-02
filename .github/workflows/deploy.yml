@@ -44,14 +44,16 @@ jobs:
 
       - name: 📋 Prepare frontend deployment
         run: |
-          rm -rf public_html
-          mkdir -p public_html
+          mkdir -p deploy
 
-          cp -r artifacts/ank-boutique/dist/assets public_html/
-          cp artifacts/ank-boutique/dist/index.html public_html/
+          rm -rf deploy/assets
+          rm -f deploy/index.html
+
+          cp -r artifacts/ank-boutique/dist/assets deploy/
+          cp artifacts/ank-boutique/dist/index.html deploy/
 
           echo "✅ Frontend ready"
-
+          
       - name: 🚩 Create restart flag
         run: |
           cat > public_html/restart.flag <<EOF
