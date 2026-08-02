@@ -39,7 +39,7 @@ jobs:
 
       - name: 📋 Prepare frontend deployment
         run: |
-          rm -rf public_html/assets public_html/index.html
+          rm -rf public_html
           mkdir -p public_html
 
           cp -r artifacts/ank-boutique/dist/assets public_html/
@@ -49,9 +49,7 @@ jobs:
 
       - name: 🚩 Create restart flag
         run: |
-          mkdir -p deploy
-
-          cat > deploy/restart.flag <<EOF
+          cat > public_html/restart.flag <<EOF
           {
             "deployment_time":"$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
             "commit":"${{ github.sha }}",
@@ -60,10 +58,10 @@ jobs:
           }
           EOF
 
-          echo "Restart flag:"
-          cat deploy/restart.flag
+          echo "✅ Restart flag created"
+          cat public_html/restart.flag
 
-      - name: 🌐 Deploy frontend
+      - name: 🌐 Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
@@ -75,13 +73,8 @@ jobs:
             **/.gitkeep
             **/error_log
 
-      - name: 🚩 Upload restart flag
-        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
-        with:
-          server: ${{ secrets.FTP_SERVER }}
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: deploy/
-          server-dir: /
-          include: |
-            restart.flag
+      - name: ✅ Deployment complete
+        run: |
+          echo "Frontend deployed."
+          echo "restart.flag uploaded."
+          echo "The cron job will restart the API if needed."
