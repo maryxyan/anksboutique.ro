@@ -35,14 +35,17 @@ jobs:
         run: |
           cd artifacts/ank-boutique
           PORT=300 BASE_PATH=/ pnpm build
-          echo "✅ Frontend built successfully"
+          echo "✅ Frontend built"
 
       - name: 📋 Prepare frontend deployment
         run: |
           rm -rf public_html/assets public_html/index.html
-          cp -r artifacts/ank-boutique/dist/assets public_html/assets
-          cp artifacts/ank-boutique/dist/index.html public_html/index.html
-          echo "✅ Frontend copied to public_html"
+          mkdir -p public_html
+
+          cp -r artifacts/ank-boutique/dist/assets public_html/
+          cp artifacts/ank-boutique/dist/index.html public_html/
+
+          echo "✅ Frontend ready"
 
       - name: 🚩 Create restart flag
         run: |
@@ -57,10 +60,10 @@ jobs:
           }
           EOF
 
-          echo "✅ restart.flag created"
+          echo "Restart flag:"
           cat deploy/restart.flag
 
-      - name: 📂 Deploy frontend via FTP
+      - name: 🌐 Deploy frontend
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
@@ -71,3 +74,14 @@ jobs:
           exclude: |
             **/.gitkeep
             **/error_log
+
+      - name: 🚩 Upload restart flag
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: deploy/
+          server-dir: /
+          include: |
+            restart.flag
