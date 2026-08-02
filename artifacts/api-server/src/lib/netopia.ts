@@ -144,14 +144,22 @@ function loadKeyFromEnv(pemRaw: string, pathRaw: string): { value: string; sourc
   return { value: "", sourceType: "empty" };
 }
 
-function fingerprintPublicComponent(keyMaterial: string, kind: "public" | "private"): string | null {
+function fingerprintPublicComponent(
+  key: string,
+  type: "public" | "private",
+): string | null {
   try {
-    const keyObject =
-      kind === "public" ? crypto.createPublicKey(keyMaterial) : crypto.createPrivateKey(keyMaterial);
-    const publicKeyObject = kind === "public" ? keyObject : crypto.createPublicKey(keyObject);
-    const der = publicKeyObject.export({ format: "der", type: "spki" });
+    const publicKey =
+      type === "private"
+        ? crypto.createPublicKey(crypto.createPrivateKey(key))
+        : crypto.createPublicKey(key);
 
-    return crypto.createHash("sha256").update(der).digest("hex").slice(0, 16);
+    const der = publicKey.export({
+      type: "spki",
+      format: "der",
+    });
+
+    return crypto.createHash("sha256").update(der).digest("hex");
   } catch {
     return null;
   }
@@ -385,41 +393,42 @@ function buildPaymentXml(config: NetopiaConfig, order: PaymentOrderData): string
   if (!config.merchantId) {
     throw new Error("NETOPIA_MERCHANT_ID is required to build the payment request.");
   }
+const xml = [
+  '<?xml version="1.0" encoding="utf-8"?>',
+  `<order type="card" id="${escapeXml(order.orderId)}" timestamp="${escapeXml(timestamp)}">`,
+  `  <signature>${escapeXml(config.merchantId)}</signature>`,
 
-  const xml = [
-    '<?xml version="1.0" encoding="UTF-8"?>',
-    `<order type="card" id="${escapeXml(order.orderId)}" timestamp="${escapeXml(timestamp)}">`,
-    `  <signature>${escapeXml(config.merchantId)}</signature>`,
-    "  <url>",
-    `    <return>${returnUrl}</return>`,
-    `    <confirm>${confirmUrl}</confirm>`,
-    "  </url>",
-    `  <ipn_cipher>aes-256-cbc</ipn_cipher>`,
-    `  <invoice currency="${escapeXml(order.currency)}" amount="${escapeXml(order.amount)}">`,
-    `    <details>${escapeXml(order.description ?? `Comanda #${order.orderId} - Anks Boutique`)}</details>`,
-    "    <contact_info>",
-    '      <billing type="person">',
-    `        <first_name>${escapeXml(firstName)}</first_name>`,
-    `        <last_name>${escapeXml(lastName)}</last_name>`,
-    `        <email>${escapeXml(order.customerEmail)}</email>`,
-    `        <mobile_phone>${escapeXml(order.customerPhone ?? "")}</mobile_phone>`,
-    `        <address>${escapeXml(order.billingAddress ?? "")}</address>`,
-    `        <city>${escapeXml(order.billingCity ?? "")}</city>`,
-    `        <country>${escapeXml(order.billingCountry ?? "RO")}</country>`,
-    "      </billing>",
-    '      <shipping type="person">',
-    `        <first_name>${escapeXml(firstName)}</first_name>`,
-    `        <last_name>${escapeXml(lastName)}</last_name>`,
-    `        <email>${escapeXml(order.customerEmail)}</email>`,
-    `        <mobile_phone>${escapeXml(order.customerPhone ?? "")}</mobile_phone>`,
-    `        <address>${escapeXml(order.billingAddress ?? "")}</address>`,
-    `        <city>${escapeXml(order.billingCity ?? "")}</city>`,
-    `        <country>${escapeXml(order.billingCountry ?? "RO")}</country>`,
-    "      </shipping>",
-    "    </contact_info>",
-    "  </invoice>",
-    "</order>",
-  ].join("\n");
+  `  <invoice currency="${escapeXml(order.currency)}" amount="${escapeXml(order.amount)}">`,
+  `    <details>${escapeXml(
+    order.description ?? `Comanda #${order.orderId} - Anks Boutique`,
+  )}</details>`,
+  "    <contact_info>",
+  '      <billing type="person">',
+  `        <first_name>${escapeXml(firstName)}</first_name>`,
+  `        <last_name>${escapeXml(lastName)}</last_name>`,
+  `        <email>${escapeXml(order.customerEmail)}</email>`,
+  `        <address>${escapeXml(order.billingAddress ?? "")}</address>`,
+  `        <mobile_phone>${escapeXml(order.customerPhone ?? "")}</mobile_phone>`,
+  "      </billing>",
+  '      <shipping type="person">',
+  `        <first_name>${escapeXml(firstName)}</first_name>`,
+  `        <last_name>${escapeXml(lastName)}</last_name>`,
+  `        <email>${escapeXml(order.customerEmail)}</email>`,
+  `        <address>${escapeXml(order.billingAddress ?? "")}</address>`,
+  `        <mobile_phone>${escapeXml(order.customerPhone ?? "")}</mobile_phone>`,
+  "      </shipping>",
+  "    </contact_info>",
+  "  </invoice>",
+
+  "  <ipn_cipher>aes-256-cbc</ipn_cipher>",
+
+  "  <url>",
+  `    <confirm>${confirmUrl}</confirm>`,
+  `    <return>${returnUrl}</return>`,
+  "  </url>",
+
+  "</order>",
+].join("\n");
 
   return xml;
 }
