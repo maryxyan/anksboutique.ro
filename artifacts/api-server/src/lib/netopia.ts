@@ -630,6 +630,23 @@ export function decryptIpnResponse(
   ivBase64?: string,
 ): IpnResponse {
   try {
+    const maybeJsonPayload = tryParseJsonPayload(dataBase64);
+    if (maybeJsonPayload) {
+      logNetopiaEvent("info", "Netopia IPN decoded as JSON payload", {
+        envKeyLength: envKeyBase64.length,
+        dataLength: dataBase64.length,
+        hasPrivateKey: Boolean(config.privateKey),
+        cipher: cipher ?? null,
+        ivLength: ivBase64?.length ?? 0,
+      });
+      return {
+        status: "paid",
+        orderId: maybeJsonPayload.order_id || maybeJsonPayload.orderId,
+        amount: maybeJsonPayload.amount,
+        currency: maybeJsonPayload.currency || "RON",
+      };
+    }
+
     if (!config.privateKey) {
       if (!config.sandbox) {
         const message = "Netopia private key is required in production for IPN callback decryption.";
@@ -769,6 +786,27 @@ export function decryptIpnResponse(
       errorMessage: error instanceof Error ? error.message : "Decryption failed",
       errorStage: "rsa_decrypt",
     };
+  }
+}
+
+function tryParseJsonPayload(dataBase64: string): Record<string, string | undefined> | null {
+  try {
+    const decoded = Buffer.from(dataBase64, "base64").toString("utf-8").trim();
+    if (!decoded) return null;
+    const parsed = JSON.parse(decoded);
+    if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return null;
+
+    const normalized: Record<string, string | undefined> = {};
+    for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+      if (typeof value === "string") {
+        normalized[key] = value;
+      } else if (typeof value === "number" || typeof value === "boolean") {
+        normalized[key] = String(value);
+      }
+    }
+    return normalized;
+  } catch {
+    return null;
   }
 }
 
