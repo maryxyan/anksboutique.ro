@@ -52,15 +52,21 @@ jobs:
           cp artifacts/ank-boutique/dist/index.html public_html/index.html
           echo "✅ Copied to public_html/"
 
-      - name: 📂 Deploy via FTP
+      - name: 📂 Deploy API
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: public_html/
-          server-dir: public_html/
-
+      
+          local-dir: artifacts/api-server/
+          server-dir: temp_repo/artifacts/api-server/
+      
           exclude: |
+            **/node_modules/**
+            **/.git/**
+            **/.idea/**
+            **/.env
+      **/*.log
             **/.gitkeep
             **/error_log
