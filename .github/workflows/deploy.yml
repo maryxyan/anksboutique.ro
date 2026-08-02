@@ -37,6 +37,11 @@ jobs:
           PORT=300 BASE_PATH=/ pnpm build
           echo "✅ Frontend built"
 
+      - name: 🔨 Verify API build
+        run: |
+          pnpm --dir artifacts/api-server run build
+          echo "✅ API build successful"
+
       - name: 📋 Prepare frontend deployment
         run: |
           rm -rf public_html
@@ -61,7 +66,7 @@ jobs:
           echo "✅ Restart flag created"
           cat public_html/restart.flag
 
-      - name: 🌐 Deploy via FTP
+      - name: 🌐 Deploy frontend
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
         with:
           server: ${{ secrets.FTP_SERVER }}
@@ -73,8 +78,35 @@ jobs:
             **/.gitkeep
             **/error_log
 
+      - name: 🚀 Deploy API source
+        uses: SamKirkland/FTP-Deploy-Action@v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: artifacts/api-server/
+          server-dir: temp_repo/artifacts/api-server/
+          exclude: |
+            **/.git/**
+            **/.github/**
+            **/node_modules/**
+            **/dist/**
+            **/uploads/**
+            **/.env
+            **/.env.local
+            **/*.log
+            **/*.pid
+            **/error_log
+
       - name: ✅ Deployment complete
         run: |
-          echo "Frontend deployed."
-          echo "restart.flag uploaded."
-          echo "The cron job will restart the API if needed."
+          echo "======================================"
+          echo "✅ Frontend deployed"
+          echo "✅ API source deployed"
+          echo "✅ restart.flag uploaded"
+          echo ""
+          echo "Server actions:"
+          echo "  1. Cron detects restart.flag"
+          echo "  2. API source is rebuilt"
+          echo "  3. Node.js API restarts"
+          echo "======================================"
