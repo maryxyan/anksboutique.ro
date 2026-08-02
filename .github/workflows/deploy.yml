@@ -7,6 +7,7 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
       - uses: actions/checkout@v4
 
@@ -36,6 +37,18 @@ jobs:
           cp -r artifacts/ank-boutique/dist/assets public_html/assets
           cp artifacts/ank-boutique/dist/index.html public_html/index.html
           echo "✅ Copied to public_html/"
+
+      - name: 🚩 Create restart flag
+        run: |
+          mkdir -p deploy
+          cat > deploy/restart.flag <<EOF
+          {
+            "time":"$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
+            "commit":"${{ github.sha }}",
+            "run":"${{ github.run_number }}"
+          }
+          EOF
+          echo "✅ Restart flag created"
 
       - name: 📂 Deploy via FTP
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
