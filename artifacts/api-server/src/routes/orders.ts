@@ -303,6 +303,12 @@ router.post("/orders", async (req, res): Promise<void> => {
       await tx.delete(cartItemsTable).where(eq(cartItemsTable.sessionId, sessionId));
 
       const netopiaConfig = getNetopiaConfig();
+      console.log("========== NEW NETOPIA ENCRYPTION CODE ==========");
+      console.log({
+        merchantId: netopiaConfig.merchantId,
+        sandbox: netopiaConfig.sandbox,
+        hasPublicKey: !!netopiaConfig.publicKey,
+      });
       const paymentRequest = encryptPaymentRequest(netopiaConfig, {
         orderId: netopiaOrderId,
         amount: total.toFixed(2),
