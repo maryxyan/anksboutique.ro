@@ -12,6 +12,7 @@ concurrency:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
 
     steps:
       - name: 📥 Checkout repository
@@ -28,8 +29,15 @@ jobs:
           node-version: 22
           cache: pnpm
 
+      - name: 🔧 Enable Corepack
+        run: corepack enable
+
       - name: 📥 Install dependencies
         run: pnpm install --frozen-lockfile
+
+      ########################################################
+      # Build Frontend
+      ########################################################
 
       - name: 🔨 Build frontend
         run: |
@@ -37,26 +45,28 @@ jobs:
           PORT=300 BASE_PATH=/ pnpm build
           echo "✅ Frontend built"
 
+      ########################################################
+      # Verify API
+      ########################################################
+
       - name: 🔨 Verify API build
         run: |
           pnpm --dir artifacts/api-server run build
           echo "✅ API build successful"
 
+      ########################################################
+      # Prepare deployment
+      ########################################################
+
       - name: 📋 Prepare frontend deployment
         run: |
+          rm -rf deploy
           mkdir -p deploy
 
-          rm -rf deploy/assets
-          rm -f deploy/index.html
-
-          cp -r artifacts/ank-boutique/dist/assets deploy/
           cp artifacts/ank-boutique/dist/index.html deploy/
+          cp -R artifacts/ank-boutique/dist/assets deploy/
 
-          echo "✅ Frontend ready"
-          
-      - name: 🚩 Create restart flag
-        run: |
-          cat > public_html/restart.flag <<EOF
+          cat > deploy/restart.flag <<EOF
           {
             "deployment_time":"$(date -u +"%Y-%m-%dT%H:%M:%SZ")",
             "commit":"${{ github.sha }}",
@@ -65,8 +75,12 @@ jobs:
           }
           EOF
 
-          echo "✅ Restart flag created"
-          cat public_html/restart.flag
+          echo "Deployment package:"
+          find deploy -maxdepth 2 -type f | sort
+
+      ########################################################
+      # Deploy Frontend
+      ########################################################
 
       - name: 🌐 Deploy frontend
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -74,11 +88,17 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: public_html/
+
+          local-dir: deploy/
           server-dir: public_html/
+
           exclude: |
             **/.gitkeep
             **/error_log
+
+      ########################################################
+      # Deploy API source
+      ########################################################
 
       - name: 🚀 Deploy API source
         uses: SamKirkland/FTP-Deploy-Action@v4.3.5
@@ -86,19 +106,25 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
+
           local-dir: artifacts/api-server/
           server-dir: temp_repo/artifacts/api-server/
+
           exclude: |
             **/.git/**
             **/.github/**
             **/node_modules/**
             **/dist/**
-            **/uploads/**
             **/.env
-            **/.env.local
-            **/*.log
+            **/.env.*
             **/*.pid
+            **/*.log
+            **/uploads/**
             **/error_log
+
+      ########################################################
+      # Finished
+      ########################################################
 
       - name: ✅ Deployment complete
         run: |
@@ -107,8 +133,8 @@ jobs:
           echo "✅ API source deployed"
           echo "✅ restart.flag uploaded"
           echo ""
-          echo "Server actions:"
-          echo "  1. Cron detects restart.flag"
-          echo "  2. API source is rebuilt"
-          echo "  3. Node.js API restarts"
+          echo "The server will:"
+          echo "  • Detect restart.flag"
+          echo "  • Rebuild the API"
+          echo "  • Restart the Node.js process"
           echo "======================================"
