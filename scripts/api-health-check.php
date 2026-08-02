@@ -8,13 +8,12 @@
  *
  * Cron setup (every 5 min): php /home/r142031anks/scripts/api-health-check.php
  *
- * The real cron script lives outside the web root; this web-root copy is intentionally
- * disabled and returns 404 when accessed over HTTP.
+ * This script is intentionally kept outside the web root and is not exposed over HTTP.
  */
 
 if (PHP_SAPI !== 'cli') {
     http_response_code(404);
-    exit('This health check endpoint is not exposed over HTTP.');
+    exit('This script must be run from the command line.');
 }
 
 // Configuration
