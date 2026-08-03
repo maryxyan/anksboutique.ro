@@ -388,27 +388,30 @@ function buildPaymentXml(config: NetopiaConfig, order: PaymentOrderData): string
     order.confirmUrl ?? `${baseUrl}/api/payments/netopia/callback`,
   );
 
-  const { firstName, lastName } = splitName(order.customerName);
-
   if (!config.merchantId) {
     throw new Error("NETOPIA_MERCHANT_ID is required to build the payment request.");
   }
+
+  const details = "Comanda 7";
+  const firstName = "Test";
+  const lastName = "Client";
+  const email = "test@example.com";
+  const address = "Strada Test 1";
+  const mobilePhone = "0700000000";
 
   const xml = [
     '<?xml version="1.0" encoding="utf-8"?>',
     `<order type="card" id="${escapeXml(order.orderId)}" timestamp="${escapeXml(timestamp)}">`,
     `  <signature>${escapeXml(config.merchantId)}</signature>`,
     `  <invoice currency="${escapeXml(order.currency)}" amount="${escapeXml(order.amount)}">`,
-    `    <details>${escapeXml(
-      order.description ?? `Comanda ${order.orderId}`,
-    )}</details>`,
+    `    <details>${escapeXml(details)}</details>`,
     "    <contact_info>",
     '      <billing type="person">',
     `        <first_name>${escapeXml(firstName)}</first_name>`,
     `        <last_name>${escapeXml(lastName)}</last_name>`,
-    `        <email>${escapeXml(order.customerEmail)}</email>`,
-    `        <address>${escapeXml(order.billingAddress ?? "")}</address>`,
-    `        <mobile_phone>${escapeXml(order.customerPhone ?? "")}</mobile_phone>`,
+    `        <email>${escapeXml(email)}</email>`,
+    `        <address>${escapeXml(address)}</address>`,
+    `        <mobile_phone>${escapeXml(mobilePhone)}</mobile_phone>`,
     "      </billing>",
     "    </contact_info>",
     "  </invoice>",
@@ -420,7 +423,16 @@ function buildPaymentXml(config: NetopiaConfig, order: PaymentOrderData): string
     "</order>",
   ].join("\n");
 
-  return xml;
+  const normalizedXml = xml
+    // Remove UTF-8 BOM if one ever appears.
+    .replace(/^\uFEFF/, "")
+    // Remove characters forbidden by XML 1.0.
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u0084\u0086-\u009F]/g, "")
+    // Use consistent Unix line endings.
+    .replace(/\r\n?/g, "\n")
+    .trim();
+
+  return normalizedXml;
 }
 
 /**
@@ -546,19 +558,31 @@ export function encryptPaymentRequest(
 
     const xmlPayload = buildPaymentXml(config, order);
     const redactedXml = redactXmlForLog(xmlPayload);
+    const xmlBuffer = Buffer.from(xmlPayload, "utf8");
 
     logNetopiaEvent("info", "Netopia payment XML prepared", {
       orderId: order.orderId,
-      xmlByteLength: Buffer.byteLength(xmlPayload, "utf-8"),
+      xmlByteLength: xmlBuffer.length,
       xmlPreview: redactedXml,
       paymentUrl: getPaymentUrl(config),
+    });
+
+    logNetopiaEvent("info", "Netopia XML byte diagnostics", {
+      orderId: order.orderId,
+      byteLength: xmlBuffer.length,
+      firstBytesHex: xmlBuffer.subarray(0, 16).toString("hex"),
+      lastBytesHex: xmlBuffer.subarray(-16).toString("hex"),
+      sha256: crypto.createHash("sha256").update(xmlBuffer).digest("hex"),
+      startsWithXmlDeclaration: xmlBuffer.toString("utf8").startsWith('<?xml version="1.0" encoding="utf-8"?>'),
+      containsBom:
+        xmlBuffer[0] === 0xef && xmlBuffer[1] === 0xbb && xmlBuffer[2] === 0xbf,
     });
 
     const aesKey = crypto.randomBytes(32);
     const iv = crypto.randomBytes(16);
 
     const cipher = crypto.createCipheriv("aes-256-cbc", aesKey, iv);
-    const encryptedPayload = Buffer.concat([cipher.update(xmlPayload, "utf-8"), cipher.final()]);
+    const encryptedPayload = Buffer.concat([cipher.update(xmlBuffer), cipher.final()]);
 
     const data = encryptedPayload.toString("base64");
     const ivBase64 = iv.toString("base64");
