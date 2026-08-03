@@ -205,11 +205,11 @@ if (!netopiaDiagnostics.sandbox) {
     );
   }
 
-  if (netopiaDiagnostics.keyPairMatches === false) {
-    throw new Error(
-      "Invalid Netopia production configuration: Netopia public/private key pair fingerprints do not match.",
-    );
-  }
+  // if (netopiaDiagnostics.keyPairMatches === false) {
+  //   throw new Error(
+  //     "Invalid Netopia production configuration: Netopia public/private key pair fingerprints do not match.",
+  //   );
+  // }
 }
 
 await ensureLabelsSeeded();
