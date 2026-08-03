@@ -611,37 +611,7 @@ export function encryptPaymentRequest(
       aesKey,
     );
     const envKey = encryptedAesKey.toString("base64");
-// Temporary diagnostic: verify our generated envelope locally.
-if (config.privateKey) {
-  const decryptedAesKey = crypto.privateDecrypt(
-    {
-      key: config.privateKey,
-      padding: crypto.constants.RSA_PKCS1_PADDING,
-    },
-    Buffer.from(envKey, "base64"),
-  );
 
-  const decipher = crypto.createDecipheriv(
-    "aes-256-cbc",
-    decryptedAesKey,
-    Buffer.from(ivBase64, "base64"),
-  );
-
-  const decryptedXml = Buffer.concat([
-    decipher.update(Buffer.from(data, "base64")),
-    decipher.final(),
-  ]).toString("utf8");
-
-  if (decryptedXml !== xmlPayload) {
-    throw new Error("Netopia local encryption round-trip failed.");
-  }
-
-  logNetopiaEvent("info", "Netopia local encryption round-trip succeeded", {
-    orderId: order.orderId,
-    aesKeyMatches: crypto.timingSafeEqual(aesKey, decryptedAesKey),
-    xmlMatches: decryptedXml === xmlPayload,
-  });
-}
     logNetopiaEvent("info", "Netopia payment request encrypted", {
       orderId: order.orderId,
       envKeyLength: envKey.length,
