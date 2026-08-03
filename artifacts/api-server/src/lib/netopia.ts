@@ -159,8 +159,18 @@ function fingerprintPublicComponent(
       format: "der",
     });
 
-    return crypto.createHash("sha256").update(der).digest("hex");
-  } catch {
+    return crypto
+      .createHash("sha256")
+      .update(der)
+      .digest("hex");
+  } catch (error) {
+    logNetopiaEvent(
+      "warn",
+      "Failed to fingerprint Netopia key",
+      { type },
+      error,
+    );
+
     return null;
   }
 }
@@ -244,9 +254,9 @@ export function getNetopiaStartupDiagnostics(config: NetopiaConfig): NetopiaStar
     publicKeyFingerprint,
     privateKeyFingerprint,
     keyPairMatches:
-      publicKeyFingerprint !== null && privateKeyFingerprint !== null
-        ? publicKeyFingerprint === privateKeyFingerprint
-        : null,
+      publicKeyFingerprint !== null &&
+      privateKeyFingerprint !== null &&
+      publicKeyFingerprint === privateKeyFingerprint,
   };
 }
 
@@ -984,4 +994,3 @@ export function hasValidKeys(config: NetopiaConfig): boolean {
 export function isConfigured(config: NetopiaConfig): boolean {
   return Boolean(config.merchantId && config.merchantId !== "TEST_MERCHANT");
 }
-
