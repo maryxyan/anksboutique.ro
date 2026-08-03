@@ -238,10 +238,10 @@ export interface NetopiaStartupDiagnostics {
 }
 
 export function getNetopiaStartupDiagnostics(config: NetopiaConfig): NetopiaStartupDiagnostics {
-  const publicKeyFingerprint = config.publicKey
+  const publicFingerprint = config.publicKey
     ? fingerprintPublicComponent(config.publicKey, "public")
     : null;
-  const privateKeyFingerprint = config.privateKey
+  const privateFingerprint = config.privateKey
     ? fingerprintPublicComponent(config.privateKey, "private")
     : null;
 
@@ -249,14 +249,14 @@ export function getNetopiaStartupDiagnostics(config: NetopiaConfig): NetopiaStar
     merchantId: config.merchantId,
     sandbox: config.sandbox,
     paymentUrl: getPaymentUrl(config),
-    publicKeyValid: publicKeyFingerprint !== null,
-    privateKeyValid: privateKeyFingerprint !== null,
-    publicKeyFingerprint,
-    privateKeyFingerprint,
+    publicKeyValid: publicFingerprint !== null,
+    privateKeyValid: privateFingerprint !== null,
+    publicKeyFingerprint: publicFingerprint,
+    privateKeyFingerprint: privateFingerprint,
     keyPairMatches:
-      publicKeyFingerprint !== null &&
-      privateKeyFingerprint !== null &&
-      publicKeyFingerprint === privateKeyFingerprint,
+      publicFingerprint !== null &&
+      privateFingerprint !== null &&
+      publicFingerprint === privateFingerprint,
   };
 }
 
