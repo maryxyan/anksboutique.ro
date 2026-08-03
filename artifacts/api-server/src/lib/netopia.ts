@@ -393,42 +393,32 @@ function buildPaymentXml(config: NetopiaConfig, order: PaymentOrderData): string
   if (!config.merchantId) {
     throw new Error("NETOPIA_MERCHANT_ID is required to build the payment request.");
   }
-const xml = [
-  '<?xml version="1.0" encoding="utf-8"?>',
-  `<order type="card" id="${escapeXml(order.orderId)}" timestamp="${escapeXml(timestamp)}">`,
-  `  <signature>${escapeXml(config.merchantId)}</signature>`,
 
-  `  <invoice currency="${escapeXml(order.currency)}" amount="${escapeXml(order.amount)}">`,
-  `    <details>${escapeXml(
-    order.description ?? `Comanda #${order.orderId} - Anks Boutique`,
-  )}</details>`,
-  "    <contact_info>",
-  '      <billing type="person">',
-  `        <first_name>${escapeXml(firstName)}</first_name>`,
-  `        <last_name>${escapeXml(lastName)}</last_name>`,
-  `        <email>${escapeXml(order.customerEmail)}</email>`,
-  `        <address>${escapeXml(order.billingAddress ?? "")}</address>`,
-  `        <mobile_phone>${escapeXml(order.customerPhone ?? "")}</mobile_phone>`,
-  "      </billing>",
-  '      <shipping type="person">',
-  `        <first_name>${escapeXml(firstName)}</first_name>`,
-  `        <last_name>${escapeXml(lastName)}</last_name>`,
-  `        <email>${escapeXml(order.customerEmail)}</email>`,
-  `        <address>${escapeXml(order.billingAddress ?? "")}</address>`,
-  `        <mobile_phone>${escapeXml(order.customerPhone ?? "")}</mobile_phone>`,
-  "      </shipping>",
-  "    </contact_info>",
-  "  </invoice>",
-
-  "  <ipn_cipher>aes-256-cbc</ipn_cipher>",
-
-  "  <url>",
-  `    <confirm>${confirmUrl}</confirm>`,
-  `    <return>${returnUrl}</return>`,
-  "  </url>",
-
-  "</order>",
-].join("\n");
+  const xml = [
+    '<?xml version="1.0" encoding="utf-8"?>',
+    `<order type="card" id="${escapeXml(order.orderId)}" timestamp="${escapeXml(timestamp)}">`,
+    `  <signature>${escapeXml(config.merchantId)}</signature>`,
+    `  <invoice currency="${escapeXml(order.currency)}" amount="${escapeXml(order.amount)}">`,
+    `    <details>${escapeXml(
+      order.description ?? `Comanda ${order.orderId}`,
+    )}</details>`,
+    "    <contact_info>",
+    '      <billing type="person">',
+    `        <first_name>${escapeXml(firstName)}</first_name>`,
+    `        <last_name>${escapeXml(lastName)}</last_name>`,
+    `        <email>${escapeXml(order.customerEmail)}</email>`,
+    `        <address>${escapeXml(order.billingAddress ?? "")}</address>`,
+    `        <mobile_phone>${escapeXml(order.customerPhone ?? "")}</mobile_phone>`,
+    "      </billing>",
+    "    </contact_info>",
+    "  </invoice>",
+    "  <ipn_cipher>aes-256-cbc</ipn_cipher>",
+    "  <url>",
+    `    <confirm>${confirmUrl}</confirm>`,
+    `    <return>${returnUrl}</return>`,
+    "  </url>",
+    "</order>",
+  ].join("\n");
 
   return xml;
 }
@@ -948,18 +938,13 @@ function getPaymentUrl(config: NetopiaConfig): string {
 /**
  * Escape special XML characters.
  */
-function escapeXml(str: string): string {
-  const amp = String.fromCharCode(38) + "amp;";
-  const lt = String.fromCharCode(38) + "lt;";
-  const gt = String.fromCharCode(38) + "gt;";
-  const quot = String.fromCharCode(38) + "quot;";
-  const apos = String.fromCharCode(38) + "apos;";
-  return str
-    .replace(/&/g, amp)
-    .replace(/</g, lt)
-    .replace(/>/g, gt)
-    .replace(/"/g, quot)
-    .replace(/'/g, apos);
+function escapeXml(value: string): string {
+  return String(value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
 }
 
 /**
