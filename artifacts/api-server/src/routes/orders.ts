@@ -1,5 +1,5 @@
 import { Router, type IRouter, type Request, type Response } from "express";
-import { eq, desc, sql } from "drizzle-orm";
+import { and, eq, desc, gte, sql } from "drizzle-orm";
 import { db, ordersTable, orderItemsTable, cartItemsTable, productsTable } from "@workspace/db";
 import {
   CreateOrderBody,
@@ -299,6 +299,31 @@ router.post("/orders", async (req, res): Promise<void> => {
           size: r.cartItem.size,
         })),
       );
+
+      // Reserve inventory as part of the same transaction as the order. The
+      // stock predicate makes this safe when two customers buy the last units
+      // concurrently: only one update can succeed and the other order rolls
+      // back without clearing its cart.
+      for (const row of cartItems) {
+        if (!row.product) {
+          throw new Error("Un produs din cos nu mai este disponibil.");
+        }
+
+        const [updatedProduct] = await tx
+          .update(productsTable)
+          .set({ stock: sql`${productsTable.stock} - ${row.cartItem.quantity}` })
+          .where(
+            and(
+              eq(productsTable.id, row.cartItem.productId),
+              gte(productsTable.stock, row.cartItem.quantity),
+            ),
+          )
+          .returning({ id: productsTable.id });
+
+        if (!updatedProduct) {
+          throw new Error(`Stoc insuficient pentru ${row.product.title}.`);
+        }
+      }
 
       await tx.delete(cartItemsTable).where(eq(cartItemsTable.sessionId, sessionId));
 
