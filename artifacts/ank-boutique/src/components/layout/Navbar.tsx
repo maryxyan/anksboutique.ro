@@ -4,7 +4,6 @@ import { useGetCart, getGetCartQueryKey } from "@workspace/api-client-react";
 import { useSessionId } from "@/hooks/use-session";
 import { Badge } from "@/components/ui/badge";
 import { useState, useRef, useEffect, useCallback } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 
 export function Navbar() {
   const [location, navigate] = useLocation();
@@ -98,17 +97,15 @@ export function Navbar() {
             aria-label={menuOpen ? "Închide meniul" : "Deschide meniul"}
             onClick={() => { setMenuOpen((o) => !o); closeSearch(); }}
           >
-            <AnimatePresence mode="wait" initial={false}>
-              {menuOpen ? (
-                <motion.span key="x" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }} transition={{ duration: 0.15 }}>
+            {menuOpen ? (
+                <span className="block animate-in fade-in zoom-in duration-150">
                   <X className="w-5 h-5" />
-                </motion.span>
+                </span>
               ) : (
-                <motion.span key="menu" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }} transition={{ duration: 0.15 }}>
+                <span className="block animate-in fade-in zoom-in duration-150">
                   <Menu className="w-5 h-5" />
-                </motion.span>
+                </span>
               )}
-            </AnimatePresence>
           </button>
           <button
             className="p-2"
@@ -138,16 +135,8 @@ export function Navbar() {
         <div className="flex items-center gap-2">
           <div className="hidden lg:flex items-center gap-2">
             <div className="flex items-center">
-              <AnimatePresence>
                 {searchOpen && (
-                  <motion.div
-                    key="search-input"
-                    initial={{ width: 0, opacity: 0 }}
-                    animate={{ width: 220, opacity: 1 }}
-                    exit={{ width: 0, opacity: 0 }}
-                    transition={{ duration: 0.25, ease: "easeInOut" }}
-                    className="overflow-hidden"
-                  >
+                  <div className="w-[220px] overflow-hidden animate-in fade-in slide-in-from-right-2 duration-200">
                     <div className="flex items-center border-b border-foreground mx-2">
                       <input
                         ref={inputRef}
@@ -164,9 +153,8 @@ export function Navbar() {
                         </button>
                       )}
                     </div>
-                  </motion.div>
+                  </div>
                 )}
-              </AnimatePresence>
               <button
                 className="p-2 hover:text-primary/70 transition-colors"
                 aria-label={searchOpen ? "Caută" : "Deschide căutarea"}
@@ -191,14 +179,9 @@ export function Navbar() {
                 )}
               </button>
 
-              <AnimatePresence>
                 {userMenuOpen && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -8 }}
-                    transition={{ duration: 0.15 }}
-                    className="absolute right-0 top-full mt-1 w-56 bg-background border border-border shadow-lg z-50"
+                  <div
+                    className="absolute right-0 top-full mt-1 w-56 bg-background border border-border shadow-lg z-50 animate-in fade-in slide-in-from-top-2 duration-150"
                     onMouseLeave={() => setUserMenuOpen(false)}
                   >
                     {isClientAuth ? (
@@ -248,17 +231,16 @@ export function Navbar() {
                         </Link>
                       </>
                     )}
-                  </motion.div>
+                  </div>
                 )}
-              </AnimatePresence>
             </div>
           </div>
 
-          <Link href="/wishlist" className="p-2 hover:text-primary/70 transition-colors hidden sm:block">
+          <Link href="/wishlist" aria-label="Lista de favorite" className="p-2 hover:text-primary/70 transition-colors hidden sm:block">
             <Heart className="w-5 h-5" />
           </Link>
 
-          <Link href="/cart" className="p-2 hover:text-primary/70 transition-colors relative flex items-center">
+          <Link href="/cart" aria-label={`Coș de cumpărături${itemCount ? `, ${itemCount} produse` : ""}`} className="p-2 hover:text-primary/70 transition-colors relative flex items-center">
             <ShoppingBag className="w-5 h-5" />
             {itemCount > 0 && (
               <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 flex items-center justify-center bg-primary text-primary-foreground text-[10px] rounded-full">
@@ -270,23 +252,12 @@ export function Navbar() {
       </div>
 
       {/* Mobile menu drawer */}
-      <AnimatePresence>
         {menuOpen && (
-          <motion.div
-            key="mobile-menu"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.25, ease: "easeInOut" }}
-            className="lg:hidden overflow-hidden bg-background border-t border-border/40"
-          >
+          <div className="lg:hidden overflow-hidden bg-background border-t border-border/40 animate-in fade-in slide-in-from-top-2 duration-200">
             <nav className="container mx-auto px-4 py-6 flex flex-col gap-0">
               {navLinks.map((link, i) => (
-                <motion.div
+                <div
                   key={link.href}
-                  initial={{ opacity: 0, x: -12 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.04, duration: 0.2 }}
                 >
                   <Link
                     href={link.href}
@@ -294,7 +265,7 @@ export function Navbar() {
                   >
                     {link.label}
                   </Link>
-                </motion.div>
+                </div>
               ))}
 
               <div className="flex items-center gap-6 mt-6 pt-2">
@@ -317,21 +288,12 @@ export function Navbar() {
                 )}
               </div>
             </nav>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
 
       {/* Mobile search bar */}
-      <AnimatePresence>
         {searchOpen && (
-          <motion.div
-            key="mobile-search"
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="lg:hidden overflow-hidden border-t border-border/40 bg-background"
-          >
+          <div className="lg:hidden overflow-hidden border-t border-border/40 bg-background animate-in fade-in slide-in-from-top-2 duration-200">
             <div className="container mx-auto px-4 py-3 flex items-center gap-3">
               <input
                 type="text"
@@ -342,16 +304,15 @@ export function Navbar() {
                 autoFocus
                 className="flex-1 bg-transparent text-sm outline-none border-b border-foreground py-1 placeholder:text-muted-foreground"
               />
-              <button onClick={handleSearch} className="shrink-0">
+              <button onClick={handleSearch} aria-label="Caută" className="shrink-0">
                 <Search className="w-4 h-4" />
               </button>
-              <button onClick={closeSearch} className="shrink-0 text-muted-foreground">
+              <button onClick={closeSearch} aria-label="Închide căutarea" className="shrink-0 text-muted-foreground">
                 <X className="w-4 h-4" />
               </button>
             </div>
-          </motion.div>
+          </div>
         )}
-      </AnimatePresence>
     </header>
   );
 }

@@ -41,14 +41,13 @@ export function Footer() {
       </div>
       {/* ANPC & SOL compliance badges */}
       <div className="container mx-auto px-4 mt-12 pt-8 border-t border-primary-foreground/10">
-        <p className="text-xs text-primary-foreground/40 uppercase tracking-widest mb-4">Soluționarea litigiilor</p>
+        <p className="text-xs text-primary-foreground/70 uppercase tracking-widest mb-4">Soluționarea litigiilor</p>
         <div className="flex flex-wrap gap-3 items-stretch">
           {/* ANPC SAL badge */}
           <a
             href="https://reclamatiisal.anpc.ro/"
             target="_blank"
             rel="noreferrer noopener"
-            aria-label="ANPC — Soluționarea Alternativă a Litigiilor"
             className="flex items-stretch border border-primary-foreground/20 hover:border-primary-foreground/50 transition-colors group overflow-hidden"
           >
             <div className="bg-[#003DA5] flex items-center justify-center px-3 py-2.5 shrink-0">
@@ -65,7 +64,6 @@ export function Footer() {
             href="https://ec.europa.eu/consumers/odr/main/index.cfm?event=main.home.chooseLanguage"
             target="_blank"
             rel="noreferrer noopener"
-            aria-label="SOL — Platforma Europeană de Soluționare Online a Litigiilor"
             className="flex items-stretch border border-primary-foreground/20 hover:border-primary-foreground/50 transition-colors group overflow-hidden"
           >
             <div className="bg-[#003399] flex items-center justify-center px-3 py-2.5 shrink-0">
@@ -97,7 +95,7 @@ export function Footer() {
             className="h-auto w-auto max-h-16 ml-auto opacity-90 hover:opacity-100 transition-opacity"
           />
         </div>
-        <p className="text-[10px] text-primary-foreground/35 mt-3 leading-relaxed max-w-lg">
+        <p className="text-xs text-primary-foreground/70 mt-3 leading-relaxed max-w-lg">
           Conform OUG 34/2014 și Regulamentului (UE) nr. 524/2013, consumatorii pot apela la proceduri de soluționare alternativă a litigiilor prin ANPC sau platforma SOL a Comisiei Europene.
         </p>
       </div>

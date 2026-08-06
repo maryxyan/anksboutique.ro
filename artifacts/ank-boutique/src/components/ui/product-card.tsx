@@ -5,7 +5,15 @@ import { useSessionId } from "@/hooks/use-session";
 import { useToggleWishlist, useGetWishlist, getGetWishlistQueryKey } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
-import { motion } from "framer-motion";
+
+function unsplashVariant(src: string, width: number) {
+  if (!src.includes("images.unsplash.com")) return src;
+  const url = new URL(src);
+  url.searchParams.set("w", String(width));
+  url.searchParams.set("auto", "format");
+  url.searchParams.set("fit", "crop");
+  return url.toString();
+}
 
 export function ProductCard({ product }: { product: Product }) {
   const sessionId = useSessionId();
@@ -43,9 +51,13 @@ export function ProductCard({ product }: { product: Product }) {
         onMouseLeave={() => setIsHovered(false)}
       >
         <img 
-          src={isHovered ? hoverImage : image} 
+          src={unsplashVariant(isHovered ? hoverImage : image, 640)}
+          srcSet={image.includes("images.unsplash.com") ? [320, 480, 640].map((width) => `${unsplashVariant(isHovered ? hoverImage : image, width)} ${width}w`).join(", ") : undefined}
+          sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 70vw"
           alt={product.title}
           loading="lazy"
+          width="480"
+          height="640"
           className="object-cover w-full h-full transition-transform duration-700 group-hover:scale-105"
         />
         
@@ -57,11 +69,13 @@ export function ProductCard({ product }: { product: Product }) {
         
         <button 
           onClick={handleWishlist}
+          type="button"
+          aria-label={isWishlisted ? `Elimină ${product.title} din favorite` : `Adaugă ${product.title} la favorite`}
           className="absolute top-3 right-3 p-2 z-10 rounded-full bg-background/50 backdrop-blur opacity-0 group-hover:opacity-100 transition-opacity"
         >
-          <motion.div whileTap={{ scale: 0.8 }}>
+          <span className="block active:scale-75 transition-transform">
             <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-accent text-accent' : 'text-foreground'}`} />
-          </motion.div>
+          </span>
         </button>
 
         {!product.inStock && (

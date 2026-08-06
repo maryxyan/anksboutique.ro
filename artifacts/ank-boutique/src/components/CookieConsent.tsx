@@ -126,7 +126,7 @@ export default function CookieConsent() {
         aria-label="Consimțământ cookie-uri"
         className="fixed bottom-0 left-0 right-0 z-[9999] md:bottom-6 md:left-6 md:right-auto md:max-w-md w-full"
       >
-        <div className="bg-background border border-border shadow-2xl">
+        <div className="min-h-[414px] md:min-h-0 bg-background border border-border shadow-2xl">
           {/* Header */}
           <div className="flex items-center justify-between px-5 pt-5 pb-3 border-b border-border">
             <div className="flex items-center gap-2">
@@ -220,7 +220,7 @@ export default function CookieConsent() {
               </>
             )}
 
-            <p className="text-[10px] text-muted-foreground/70 text-center leading-relaxed">
+            <p className="text-xs text-muted-foreground text-center leading-relaxed">
               Operator: Ank's Boutique · Poți retrage consimțământul oricând din{" "}
               <button
                 onClick={() => {

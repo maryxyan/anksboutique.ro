@@ -3,7 +3,6 @@ import { Layout } from "@/components/layout/Layout";
 import { Link } from "wouter";
 import { useListFeaturedProducts, useListNewArrivals } from "@workspace/api-client-react";
 import { ProductCard } from "@/components/ui/product-card";
-import { motion } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
@@ -57,20 +56,19 @@ export default function Home() {
       <section className="relative h-[85vh] w-full bg-muted overflow-hidden flex items-center justify-center">
         <div className="absolute inset-0 z-0">
           <img 
-            src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=2000&auto=format&fit=crop" 
+            src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1280&auto=format&fit=crop"
+            srcSet="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=640&auto=format&fit=crop 640w, https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=960&auto=format&fit=crop 960w, https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1280&auto=format&fit=crop 1280w, https://images.unsplash.com/photo-1490481651871-ab68de25d43d?q=80&w=1920&auto=format&fit=crop 1920w"
+            sizes="100vw"
             alt="Ank's Boutique" 
-            loading="lazy"
+            loading="eager"
+            fetchPriority="high"
             className="w-full h-full object-cover object-center opacity-80"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent mix-blend-multiply" />
         </div>
         
         <div className="relative z-10 text-center px-4 max-w-3xl mx-auto mt-20">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, ease: "easeOut" }}
-          >
+          <div className="animate-in fade-in slide-in-from-bottom-5 duration-700">
             <h1 className="text-5xl md:text-7xl font-serif text-white mb-6 tracking-wide drop-shadow-sm">
               Eleganță fără efort.
             </h1>
@@ -83,7 +81,7 @@ export default function Home() {
             >
               Descoperă Colecția
             </Link>
-          </motion.div>
+          </div>
         </div>
       </section>
 
@@ -126,7 +124,9 @@ export default function Home() {
       <section className="py-0 flex flex-col md:flex-row bg-[#F5EFE7]">
         <div className="w-full md:w-1/2 aspect-square md:aspect-auto h-[500px] md:h-[700px]">
           <img 
-            src="https://images.unsplash.com/photo-1550614000-4b95d466f272?q=80&w=1200&auto=format&fit=crop" 
+            src="https://images.unsplash.com/photo-1550614000-4b95d466f272?q=80&w=960&auto=format&fit=crop"
+            srcSet="https://images.unsplash.com/photo-1550614000-4b95d466f272?q=80&w=480&auto=format&fit=crop 480w, https://images.unsplash.com/photo-1550614000-4b95d466f272?q=80&w=768&auto=format&fit=crop 768w, https://images.unsplash.com/photo-1550614000-4b95d466f272?q=80&w=960&auto=format&fit=crop 960w"
+            sizes="(min-width: 768px) 50vw, 100vw"
             alt="Editorial" 
             loading="lazy"
             className="w-full h-full object-cover"
