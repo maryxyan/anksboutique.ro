@@ -25,8 +25,16 @@ export function Navbar() {
 
   // Check if client is authenticated
   const isClientAuth = typeof window !== "undefined" && localStorage.getItem("clientAuthenticated") === "true";
-  const clientUser = typeof window !== "undefined" && localStorage.getItem("client_user");
-  const clientName = clientUser ? JSON.parse(clientUser).name : null;
+  const clientUser = typeof window !== "undefined" ? localStorage.getItem("client_user") : null;
+  let clientName: string | null = null;
+  if (clientUser) {
+    try {
+      clientName = JSON.parse(clientUser).name ?? null;
+    } catch {
+      localStorage.removeItem("clientAuthenticated");
+      localStorage.removeItem("client_user");
+    }
+  }
 
   const openSearch = useCallback(() => {
     setMenuOpen(false);
@@ -81,7 +89,7 @@ export function Navbar() {
 
   return (
     <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b border-border/40">
-      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+      <div className="container relative mx-auto px-4 h-16 flex items-center justify-between">
 
         {/* Left — mobile */}
         <div className="flex items-center gap-1 lg:hidden">
@@ -121,7 +129,7 @@ export function Navbar() {
         {/* Center — logo */}
         <Link
           href="/"
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-serif text-2xl tracking-wide font-medium"
+          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap font-serif text-xl sm:text-2xl tracking-wide font-medium"
         >
           Ank's Boutique
         </Link>

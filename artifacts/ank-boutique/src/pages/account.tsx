@@ -7,6 +7,7 @@ import ProfileTab from "./account-profile";
 import OrdersTab from "./account-orders";
 import WishlistTab from "./account-wishlist";
 import AddressesTab from "./account-addresses";
+import { Layout } from "@/components/layout/Layout";
 
 type TabId = "profile" | "orders" | "wishlist" | "addresses";
 
@@ -19,7 +20,13 @@ export default function AccountPage() {
     const auth = localStorage.getItem("clientAuthenticated");
     const storedUser = localStorage.getItem("client_user");
     if (auth === "true" && storedUser) {
-      setUser(JSON.parse(storedUser));
+      try {
+        setUser(JSON.parse(storedUser));
+      } catch {
+        localStorage.removeItem("clientAuthenticated");
+        localStorage.removeItem("client_user");
+        navigate("/login");
+      }
     } else {
       navigate("/login");
     }
@@ -35,7 +42,7 @@ export default function AccountPage() {
   ];
 
   return (
-    <><Helmet><title>Contul Meu | Anks Boutique</title><meta name="robots" content="noindex, nofollow" /></Helmet><div className="min-h-[80vh] px-4 py-8 md:py-12 max-w-5xl mx-auto">
+    <><Helmet><title>Contul Meu | Anks Boutique</title><meta name="robots" content="noindex, nofollow" /></Helmet><Layout><div className="min-h-[80vh] px-4 py-8 md:py-12 max-w-5xl mx-auto">
       <div className="mb-8">
         <h1 className="text-2xl md:text-3xl font-serif">Contul Meu</h1>
         <p className="text-muted-foreground text-sm mt-1">Bine ai revenit, {user.name}!</p>
@@ -64,6 +71,6 @@ export default function AccountPage() {
       {activeTab === "orders" && <OrdersTab user={user} />}
       {activeTab === "wishlist" && <WishlistTab user={user} />}
       {activeTab === "addresses" && <AddressesTab user={user} />}
-    </div></>
+    </div></Layout></>
   );
 }

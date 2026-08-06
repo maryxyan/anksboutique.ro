@@ -22,7 +22,7 @@ export default function Checkout() {
   const formRef = useRef<HTMLFormElement>(null);
   const { toast } = useToast();
 
-  const { data: cart } = useGetCart(
+  const { data: cart, isLoading: isCartLoading } = useGetCart(
     { sessionId },
     { query: { enabled: !!sessionId, queryKey: getGetCartQueryKey({ sessionId }) } }
   );
@@ -92,6 +92,22 @@ export default function Checkout() {
 
   const isEmpty = !cart || cart.items.length === 0;
 
+  if (isCartLoading) {
+    return (
+      <Layout>
+        <div className="container mx-auto px-4 py-16 lg:py-24 animate-pulse" aria-label="Se încarcă datele comenzii">
+          <div className="h-9 w-64 max-w-full bg-muted mb-10" />
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
+            <div className="lg:col-span-2 space-y-4">
+              {[1, 2, 3, 4].map((item) => <div key={item} className="h-12 bg-muted" />)}
+            </div>
+            <div className="h-64 bg-muted" />
+          </div>
+        </div>
+      </Layout>
+    );
+  }
+
   if (isEmpty) {
     return (
       <Layout>
@@ -135,9 +151,9 @@ export default function Checkout() {
       </Helmet>
       <Layout>
         <div className="container mx-auto px-4 py-12 lg:py-20">
-          <h1 className="text-3xl lg:text-4xl font-serif mb-12">Finalizare Comandă</h1>
+          <h1 className="text-3xl lg:text-4xl font-serif mb-8 lg:mb-12">Finalizare Comandă</h1>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 lg:gap-12">
           {/* Form */}
           <form onSubmit={handleSubmit} className="lg:col-span-2 space-y-6">
             <div>
@@ -236,7 +252,7 @@ export default function Checkout() {
               <button
                 type="submit"
                 disabled={createOrder.isPending}
-                className="w-full h-14 bg-foreground text-background text-sm uppercase tracking-widest font-medium hover:bg-foreground/80 disabled:opacity-40 transition-colors flex items-center justify-center gap-2"
+                className="w-full min-h-14 bg-foreground text-background px-4 py-3 text-center text-xs sm:text-sm uppercase tracking-wider sm:tracking-widest font-medium hover:bg-foreground/80 disabled:opacity-40 transition-colors flex items-center justify-center gap-2 leading-snug"
               >
                 {createOrder.isPending ? (
                   <span>Se procesează...</span>
@@ -252,7 +268,7 @@ export default function Checkout() {
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <div className="bg-muted p-6 sticky top-24">
+            <div className="bg-muted p-6 lg:sticky lg:top-24">
               <h2 className="text-sm font-medium uppercase tracking-widest mb-6">Sumar Comandă</h2>
               <div className="space-y-4 mb-6">
                 {cart?.items.map((item) => (

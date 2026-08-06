@@ -43,8 +43,8 @@ export default function Cart() {
 
   return (
     <><Helmet><title>Cosul Meu | Anks Boutique</title><meta name="robots" content="noindex, nofollow" /></Helmet><Layout>
-      <div className="container mx-auto px-4 py-12 lg:py-20">
-        <h1 className="text-3xl lg:text-4xl font-serif mb-12">Geanta Ta</h1>
+      <div className="container mx-auto px-4 py-10 lg:py-20">
+        <h1 className="text-3xl lg:text-4xl font-serif mb-8 lg:mb-12">Geanta Ta</h1>
 
         {isLoading ? (
           <div className="space-y-4 animate-pulse">
@@ -85,7 +85,7 @@ export default function Cart() {
                     layout
                     initial={{ opacity: 1 }}
                     exit={{ opacity: 0, height: 0 }}
-                    className="flex gap-6 py-8 border-b border-border/40"
+                    className="flex gap-4 sm:gap-6 py-6 sm:py-8 border-b border-border/40"
                   >
                     <Link href={`/product/${item.productId}`} className="shrink-0">
                       <img
@@ -95,7 +95,7 @@ export default function Cart() {
                         }
                         alt={item.productTitle}
                         loading="lazy"
-                        className="w-28 h-36 object-cover bg-muted"
+                        className="w-24 h-32 sm:w-28 sm:h-36 object-cover bg-muted"
                       />
                     </Link>
 
@@ -117,6 +117,7 @@ export default function Cart() {
                         <button
                           onClick={() => handleRemove(item.id)}
                           className="p-1 text-muted-foreground hover:text-foreground transition-colors"
+                          aria-label={`Elimină ${item.productTitle} din coș`}
                         >
                           <X className="w-4 h-4" />
                         </button>
@@ -127,6 +128,7 @@ export default function Cart() {
                           <button
                             onClick={() => handleQuantity(item.id, item.quantity - 1)}
                             className="w-9 h-9 flex items-center justify-center hover:bg-muted transition-colors"
+                            aria-label={`Scade cantitatea pentru ${item.productTitle}`}
                           >
                             <Minus className="w-3 h-3" />
                           </button>
@@ -134,6 +136,7 @@ export default function Cart() {
                           <button
                             onClick={() => handleQuantity(item.id, item.quantity + 1)}
                             className="w-9 h-9 flex items-center justify-center hover:bg-muted transition-colors"
+                            aria-label={`Crește cantitatea pentru ${item.productTitle}`}
                           >
                             <Plus className="w-3 h-3" />
                           </button>
@@ -150,7 +153,7 @@ export default function Cart() {
 
             {/* Summary */}
             <div className="lg:col-span-1">
-              <div className="bg-muted p-8 sticky top-24">
+              <div className="bg-muted p-6 sm:p-8 lg:sticky lg:top-24">
                 <h2 className="text-lg font-medium mb-6">Sumar Comandă</h2>
                 <div className="space-y-3 text-sm mb-6">
                   <div className="flex justify-between">

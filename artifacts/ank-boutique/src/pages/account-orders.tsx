@@ -75,7 +75,7 @@ export default function OrdersTab({ user }: { user: ClientUser }) {
             {filteredOrders.map((order) => (
               <div key={order.id} className="border border-border">
                 <button onClick={() => setExpandedOrder(expandedOrder === order.id ? null : order.id)}
-                  className="w-full flex items-center justify-between p-4 hover:bg-muted/30 transition-colors text-left">
+                  className="w-full flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 hover:bg-muted/30 transition-colors text-left">
                   <div className="flex items-center gap-3 min-w-0">
                     {statusIcon(order.status)}
                     <div className="min-w-0">
@@ -85,8 +85,8 @@ export default function OrdersTab({ user }: { user: ClientUser }) {
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center gap-4 shrink-0">
-                    <span className="text-xs font-medium uppercase tracking-wider">{statusLabel(order.status)}</span>
+                  <div className="w-full sm:w-auto flex items-center justify-between sm:justify-end gap-3 sm:gap-4 shrink-0 pl-7 sm:pl-0">
+                    <span className="text-xs font-medium uppercase tracking-wider truncate">{statusLabel(order.status)}</span>
                     <span className="text-sm font-medium">{order.total.toFixed(2)} RON</span>
                     {expandedOrder === order.id ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                   </div>

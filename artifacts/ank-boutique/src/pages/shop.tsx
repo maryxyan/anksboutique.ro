@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useLocation } from "wouter";
 import { useListProducts, useListCategories } from "@workspace/api-client-react";
 import { ProductCard } from "@/components/ui/product-card";
-import { Search } from "lucide-react";
+import { ChevronDown, Search, SlidersHorizontal } from "lucide-react";
 
 export default function Shop() {
   const [location] = useLocation();
@@ -14,6 +14,7 @@ export default function Shop() {
   const [category, setCategory] = useState(() => getParams().get("category") || "");
   const [search, setSearch] = useState(() => getParams().get("search") || "");
   const [sortBy, setSortBy] = useState(() => getParams().get("sortBy") || "newest");
+  const [filtersOpen, setFiltersOpen] = useState(false);
 
   useEffect(() => {
     const p = getParams();
@@ -85,8 +86,18 @@ export default function Shop() {
         </div>
 
         <div className="flex flex-col lg:flex-row gap-8">
+          <button
+            type="button"
+            onClick={() => setFiltersOpen((open) => !open)}
+            className="lg:hidden w-full min-h-11 flex items-center justify-between border border-border px-4 text-sm font-medium"
+            aria-expanded={filtersOpen}
+            aria-controls="shop-filters"
+          >
+            <span className="flex items-center gap-2"><SlidersHorizontal className="w-4 h-4" /> Căutare și filtre</span>
+            <ChevronDown className={`w-4 h-4 transition-transform ${filtersOpen ? "rotate-180" : ""}`} />
+          </button>
           {/* Sidebar Filters */}
-          <aside className="w-full lg:w-64 shrink-0 space-y-8">
+          <aside id="shop-filters" className={`${filtersOpen ? "block" : "hidden"} w-full lg:block lg:w-64 shrink-0 space-y-8 border-b border-border pb-6 lg:border-0 lg:pb-0`}>
             <div>
               <div className="relative mb-6">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -100,7 +111,7 @@ export default function Shop() {
               </div>
 
               <h3 className="font-medium mb-4 text-sm uppercase tracking-widest">Categorii</h3>
-              <div className="space-y-2">
+              <div className="flex flex-wrap gap-x-5 gap-y-3 lg:block lg:space-y-2">
                 <button 
                   onClick={() => setCategory("")}
                   className={`block text-sm transition-colors ${!category ? 'text-foreground font-medium' : 'text-muted-foreground hover:text-foreground'}`}

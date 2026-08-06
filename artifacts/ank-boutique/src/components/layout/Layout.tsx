@@ -25,13 +25,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="min-h-[100dvh] flex flex-col bg-background text-foreground font-sans">
       <Navbar />
-      <main className="flex-1 w-full pb-16 lg:pb-0">
+      <main className="flex-1 w-full pb-[calc(4rem+env(safe-area-inset-bottom))] lg:pb-0">
         {children}
       </main>
       <Footer />
 
       {/* Mobile Bottom Navigation */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-background border-t border-border flex items-center justify-around px-2 z-50">
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 h-[calc(4rem+env(safe-area-inset-bottom))] pb-[env(safe-area-inset-bottom)] bg-background border-t border-border flex items-center justify-around px-2 z-50">
         <Link href="/" className={`flex flex-col items-center justify-center w-full h-full space-y-1 ${location === '/' ? 'text-primary' : 'text-muted-foreground'}`}>
           <Home className="w-5 h-5" />
           <span className="text-[10px] font-medium">Home</span>

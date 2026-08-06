@@ -187,7 +187,7 @@ export default function ProfileTab({ user, setUser }: { user: ClientUser; setUse
               <input type="email" value={deleteEmail} onChange={(e) => setDeleteEmail(e.target.value)}
                 placeholder={user.email}
                 className="w-full border border-destructive bg-background px-3 py-2 text-sm focus:border-destructive outline-none transition-colors mb-3" />
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <button onClick={deleteAccount} disabled={deleteEmail !== user.email || deleting}
                   className="h-10 px-5 bg-destructive text-white text-xs uppercase tracking-widest font-medium hover:bg-destructive/80 disabled:opacity-40 transition-colors">
                   {deleting ? "Se sterge..." : "Confirm Stergerea"}
