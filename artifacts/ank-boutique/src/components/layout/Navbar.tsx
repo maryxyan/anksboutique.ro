@@ -129,7 +129,7 @@ export function Navbar() {
         {/* Center — logo */}
         <Link
           href="/"
-          className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 whitespace-nowrap font-serif text-xl sm:text-2xl tracking-wide font-medium"
+          className="absolute left-1/2 top-1/2 w-max -translate-x-1/2 -translate-y-1/2 whitespace-nowrap font-serif text-xl leading-none sm:text-2xl tracking-wide font-medium"
         >
           Ank's Boutique
         </Link>
