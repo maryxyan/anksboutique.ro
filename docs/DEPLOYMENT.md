@@ -2,6 +2,8 @@
 
 Production is deployed through Railway. The former Romarg FTP/Node deployment is retired and must not be restarted.
 
+The `Build & Verify for Railway` GitHub Actions workflow validates every push to `main`. Railway's GitHub integration performs the actual deployment; the workflow does not require a `RAILWAY_TOKEN` and does not upload files over FTP.
+
 ## Railway services
 
 Configure separate API and frontend services from this repository, or equivalent Railway build targets.
