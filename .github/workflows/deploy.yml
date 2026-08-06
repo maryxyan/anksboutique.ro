@@ -38,6 +38,12 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      # The API's project references resolve through declaration files emitted by
+      # these composite library projects. Build them before running `--noEmit` on
+      # the API, especially on a fresh CI checkout where lib/*/dist does not exist.
+      - name: Typecheck libraries
+        run: pnpm run typecheck:libs
+
       - name: Typecheck API
         run: pnpm --filter @workspace/api-server typecheck
 
