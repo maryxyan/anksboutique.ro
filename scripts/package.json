@@ -7,7 +7,6 @@
     "hello": "tsx ./src/hello.ts",
     "seed": "tsx ./src/seed.ts",
     "start": "tsx ./src/start.ts",
-    "restart-api": "tsx ./src/restart-api.ts",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "devDependencies": {

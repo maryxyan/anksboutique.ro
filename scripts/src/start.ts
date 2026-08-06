@@ -81,7 +81,7 @@ async function main() {
     'pnpm',
     ['--dir', projectRoot, '--filter', '@workspace/api-server', 'run', 'dev'],
     {
-      DATABASE_URL: 'postgresql://anksboutique:password123@localhost:5432/anksboutique',
+      DATABASE_URL: process.env.DATABASE_URL || 'postgresql://anksboutique@localhost:5432/anksboutique',
       PORT: '8080',
       NODE_ENV: 'development'
     }
