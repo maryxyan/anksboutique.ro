@@ -98,8 +98,6 @@ export interface IpnResponse {
   errorMessage?: string;
   /** Internal stage where the error occurred */
   errorStage?: "missing_private_key" | "rsa_decrypt" | "aes_decrypt" | "xml_parse" | "unsupported_cipher";
-  /** Raw decrypted payload for debugging */
-  rawPayload?: Record<string, unknown>;
 }
 
 // ── Default URLs ─────────────────────────────────────────────────────────────
@@ -175,47 +173,6 @@ function fingerprintPublicComponent(
   }
 }
 
-function getKeySourceType(keyRaw: string): "empty" | "inline" | "path" {
-  if (!keyRaw.trim()) return "empty";
-  return keyRaw.includes("-----BEGIN") ? "inline" : "path";
-}
-
-function buildNetopiaLogContext(config: NetopiaConfig, extra: Record<string, unknown> = {}) {
-  const publicKeyFingerprint = config.publicKey
-    ? fingerprintPublicComponent(config.publicKey, "public")
-    : null;
-  const privateKeyFingerprint = config.privateKey
-    ? fingerprintPublicComponent(config.privateKey, "private")
-    : null;
-
-  return {
-    merchantIdPresent: Boolean(config.merchantId),
-    merchantIdLength: config.merchantId.length,
-    sandbox: config.sandbox,
-    paymentUrl: getPaymentUrl(config),
-    publicKeyLoaded: Boolean(config.publicKey),
-    publicKeyLength: config.publicKey.length,
-    publicKeyFingerprint,
-    publicKeyValid: publicKeyFingerprint !== null,
-    privateKeyLoaded: Boolean(config.privateKey),
-    privateKeyLength: config.privateKey.length,
-    privateKeyFingerprint,
-    privateKeyValid: privateKeyFingerprint !== null,
-    keyPairMatches:
-      publicKeyFingerprint !== null && privateKeyFingerprint !== null
-        ? publicKeyFingerprint === privateKeyFingerprint
-        : null,
-    ...extra,
-  };
-}
-
-function redactXmlForLog(xmlPayload: string): string {
-  return xmlPayload.replace(
-    /<first_name>.*?<\/first_name>|<last_name>.*?<\/last_name>|<email>.*?<\/email>|<mobile_phone>.*?<\/mobile_phone>|<address>.*?<\/address>/g,
-    "<redacted>...</redacted>",
-  );
-}
-
 function logNetopiaEvent(
   level: "info" | "warn" | "error",
   message: string,
@@ -224,40 +181,6 @@ function logNetopiaEvent(
 ): void {
   const payload = err === undefined ? context : { ...context, err };
   logger[level](payload, message);
-}
-
-export interface NetopiaStartupDiagnostics {
-  merchantId: string;
-  sandbox: boolean;
-  paymentUrl: string;
-  publicKeyValid: boolean;
-  privateKeyValid: boolean;
-  publicKeyFingerprint: string | null;
-  privateKeyFingerprint: string | null;
-  keyPairMatches: boolean | null;
-}
-
-export function getNetopiaStartupDiagnostics(config: NetopiaConfig): NetopiaStartupDiagnostics {
-  const publicFingerprint = config.publicKey
-    ? fingerprintPublicComponent(config.publicKey, "public")
-    : null;
-  const privateFingerprint = config.privateKey
-    ? fingerprintPublicComponent(config.privateKey, "private")
-    : null;
-
-  return {
-    merchantId: config.merchantId,
-    sandbox: config.sandbox,
-    paymentUrl: getPaymentUrl(config),
-    publicKeyValid: publicFingerprint !== null,
-    privateKeyValid: privateFingerprint !== null,
-    publicKeyFingerprint: publicFingerprint,
-    privateKeyFingerprint: privateFingerprint,
-    keyPairMatches:
-      publicFingerprint !== null &&
-      privateFingerprint !== null &&
-      publicFingerprint === privateFingerprint,
-  };
 }
 
 /**
@@ -288,26 +211,6 @@ export function loadConfigFromEnv(): NetopiaConfig {
   const privateKey = privateKeySource.value;
   const publicKeyFingerprint = publicKey ? fingerprintPublicComponent(publicKey, "public") : null;
   const privateKeyFingerprint = privateKey ? fingerprintPublicComponent(privateKey, "private") : null;
-
-  logNetopiaEvent("info", "Netopia config loaded", {
-    merchantIdPresent: Boolean(merchantId),
-    merchantIdLength: merchantId.length,
-    publicKeyLoaded: Boolean(publicKey),
-    publicKeyLength: publicKey.length,
-    publicKeySourceType: publicKeySource.sourceType,
-    publicKeyPathSourceType: getKeySourceType(publicKeyRaw),
-    privateKeyLoaded: Boolean(privateKey),
-    privateKeyLength: privateKey.length,
-    privateKeySourceType: privateKeySource.sourceType,
-    privateKeyPathSourceType: getKeySourceType(privateKeyRaw),
-    publicKeyValid: publicKeyFingerprint !== null,
-    privateKeyValid: privateKeyFingerprint !== null,
-    sandbox,
-    sandboxRaw: sandboxRaw ?? "",
-    nodeEnv,
-    apiKeyPresent: Boolean(apiKey),
-    signatureSource: "NETOPIA_MERCHANT_ID",
-  });
 
   if (!publicKey && !privateKey) {
     logNetopiaEvent("warn", "Netopia RSA keys are missing; falling back to stub mode", {
@@ -402,26 +305,23 @@ function buildPaymentXml(config: NetopiaConfig, order: PaymentOrderData): string
     throw new Error("NETOPIA_MERCHANT_ID is required to build the payment request.");
   }
 
-  const details = "Comanda 7";
-  const firstName = "Test";
-  const lastName = "Client";
-  const email = "test@example.com";
-  const address = "Strada Test 1";
-  const mobilePhone = "0700000000";
+  const nameParts = order.customerName.trim().split(/\s+/);
+  const firstName = nameParts.shift() || order.customerName;
+  const lastName = nameParts.join(" ") || firstName;
 
   const xml = [
     '<?xml version="1.0" encoding="utf-8"?>',
     `<order type="card" id="${escapeXml(order.orderId)}" timestamp="${escapeXml(timestamp)}">`,
     `  <signature>${escapeXml(config.merchantId)}</signature>`,
     `  <invoice currency="${escapeXml(order.currency)}" amount="${escapeXml(order.amount)}">`,
-    `    <details>${escapeXml(details)}</details>`,
+    `    <details>${escapeXml(order.description ?? `Comanda ${order.orderId}`)}</details>`,
     "    <contact_info>",
     '      <billing type="person">',
     `        <first_name>${escapeXml(firstName)}</first_name>`,
     `        <last_name>${escapeXml(lastName)}</last_name>`,
-    `        <email>${escapeXml(email)}</email>`,
-    `        <address>${escapeXml(address)}</address>`,
-    `        <mobile_phone>${escapeXml(mobilePhone)}</mobile_phone>`,
+    `        <email>${escapeXml(order.customerEmail)}</email>`,
+    `        <address>${escapeXml(order.billingAddress ?? "")}</address>`,
+    `        <mobile_phone>${escapeXml(order.customerPhone ?? "")}</mobile_phone>`,
     "      </billing>",
     "    </contact_info>",
     "  </invoice>",
@@ -455,14 +355,21 @@ function parseSimpleXml(xml: string): Record<string, unknown> | null {
     const result: Record<string, unknown> = {};
 
     // Extract the root element name and content
-    const rootMatch = xml.match(/<(\w+)[^>]*>([\s\S]*)<\/\1>/);
+    const rootMatch = xml.match(/<(\w+)([^>]*)>([\s\S]*)<\/\1>/);
     if (!rootMatch) return null;
 
     const rootName = rootMatch[1];
-    const rootContent = rootMatch[2];
+    const rootAttributes = rootMatch[2];
+    const rootContent = rootMatch[3];
 
     // Parse child elements
     const children = parseChildren(rootContent);
+    if (typeof children === "string") return null;
+    const attrRegex = /(\w+)=["']([^"']*)["']/g;
+    let attrMatch;
+    while ((attrMatch = attrRegex.exec(rootAttributes)) !== null) {
+      children[`@_${attrMatch[1]}`] = attrMatch[2];
+    }
     result[rootName] = children;
 
     return result;
@@ -503,14 +410,13 @@ function parseChildren(xml: string): Record<string, unknown> | string {
       value = trimmedContent;
     }
 
-    // If there are attributes, wrap in an object with @_ prefix convention
-    if (Object.keys(attrs).length > 0 && typeof value === "object") {
-      (value as Record<string, unknown>)["@_id"] = attrs["id"] ?? "";
-    } else if (Object.keys(attrs).length > 0) {
-      value = {
-        "#text": value,
-        "@_id": attrs["id"] ?? "",
-      };
+    // Preserve attributes using the @_ prefix convention.
+    if (Object.keys(attrs).length > 0) {
+      const wrapped = typeof value === "object" ? value as Record<string, unknown> : { "#text": value };
+      for (const [name, attributeValue] of Object.entries(attrs)) {
+        wrapped[`@_${name}`] = attributeValue;
+      }
+      value = wrapped;
     }
 
     // Handle duplicate tags (like multiple items)
@@ -567,26 +473,7 @@ export function encryptPaymentRequest(
     }
 
     const xmlPayload = buildPaymentXml(config, order);
-    const redactedXml = redactXmlForLog(xmlPayload);
     const xmlBuffer = Buffer.from(xmlPayload, "utf8");
-
-    logNetopiaEvent("info", "Netopia payment XML prepared", {
-      orderId: order.orderId,
-      xmlByteLength: xmlBuffer.length,
-      xmlPreview: redactedXml,
-      paymentUrl: getPaymentUrl(config),
-    });
-
-    logNetopiaEvent("info", "Netopia XML byte diagnostics", {
-      orderId: order.orderId,
-      byteLength: xmlBuffer.length,
-      firstBytesHex: xmlBuffer.subarray(0, 16).toString("hex"),
-      lastBytesHex: xmlBuffer.subarray(-16).toString("hex"),
-      sha256: crypto.createHash("sha256").update(xmlBuffer).digest("hex"),
-      startsWithXmlDeclaration: xmlBuffer.toString("utf8").startsWith('<?xml version="1.0" encoding="utf-8"?>'),
-      containsBom:
-        xmlBuffer[0] === 0xef && xmlBuffer[1] === 0xbb && xmlBuffer[2] === 0xbf,
-    });
 
     const aesKey = crypto.randomBytes(32);
     const iv = crypto.randomBytes(16);
@@ -597,12 +484,6 @@ export function encryptPaymentRequest(
     const data = encryptedPayload.toString("base64");
     const ivBase64 = iv.toString("base64");
 
-    logNetopiaEvent("info", "Encrypting Netopia payment AES key", {
-      orderId: order.orderId,
-      padding: "RSA_PKCS1_PADDING",
-      paymentUrl: getPaymentUrl(config),
-    });
-
     const encryptedAesKey = crypto.publicEncrypt(
       {
         key: config.publicKey,
@@ -611,14 +492,6 @@ export function encryptPaymentRequest(
       aesKey,
     );
     const envKey = encryptedAesKey.toString("base64");
-
-    logNetopiaEvent("info", "Netopia payment request encrypted", {
-      orderId: order.orderId,
-      envKeyLength: envKey.length,
-      dataLength: data.length,
-      ivLength: ivBase64.length,
-      paymentUrl: getPaymentUrl(config),
-    });
 
     return {
       envKey,
@@ -663,15 +536,8 @@ export function decryptIpnResponse(
   ivBase64?: string,
 ): IpnResponse {
   try {
-    const maybeJsonPayload = tryParseJsonPayload(dataBase64);
+    const maybeJsonPayload = config.sandbox ? tryParseJsonPayload(dataBase64) : null;
     if (maybeJsonPayload) {
-      logNetopiaEvent("info", "Netopia IPN decoded as JSON payload", {
-        envKeyLength: envKeyBase64.length,
-        dataLength: dataBase64.length,
-        hasPrivateKey: Boolean(config.privateKey),
-        cipher: cipher ?? null,
-        ivLength: ivBase64?.length ?? 0,
-      });
       return {
         status: "paid",
         orderId: maybeJsonPayload.order_id || maybeJsonPayload.orderId,
@@ -699,13 +565,6 @@ export function decryptIpnResponse(
 
       try {
         const payload = JSON.parse(Buffer.from(dataBase64, "base64").toString());
-        logNetopiaEvent("info", "Netopia IPN decoded in stub mode", {
-          envKeyLength: envKeyBase64.length,
-          dataLength: dataBase64.length,
-          hasPrivateKey: false,
-          cipher: cipher ?? null,
-          ivLength: ivBase64?.length ?? 0,
-        });
         return {
           status: "paid",
           orderId: payload.order_id || payload.orderId,
@@ -843,44 +702,43 @@ function tryParseJsonPayload(dataBase64: string): Record<string, string | undefi
   }
 }
 
-function parseIpnFromXml(config: NetopiaConfig, xml: string): IpnResponse {
+function parseIpnFromXml(_config: NetopiaConfig, xml: string): IpnResponse {
   const parsed = parseSimpleXml(xml);
   if (!parsed) {
     return { status: "error", errorMessage: "Failed to parse IPN XML" };
   }
 
-  // Navigate the parsed XML object to extract payment info
-  const crc = parsed["crc"] as Record<string, unknown> | undefined;
-  const order = crc?.["order"] as Record<string, unknown> | undefined;
+  const order = parsed["order"] as Record<string, unknown> | undefined;
 
   if (!order) {
     return { status: "error", errorMessage: "Invalid IPN XML structure" };
   }
 
-  const rawStatus = String(order["status"] ?? "").toLowerCase();
-  const transaction = order["transaction"] as Record<string, unknown> | undefined;
+  const mobilpay = order["mobilpay"] as Record<string, unknown> | undefined;
   const invoice = order["invoice"] as Record<string, unknown> | undefined;
+  if (!mobilpay) {
+    return { status: "error", errorMessage: "Invalid IPN XML structure" };
+  }
+
+  const action = String(mobilpay["action"] ?? "").toLowerCase();
+  const paymentError = mobilpay["error"] as Record<string, unknown> | string | undefined;
+  const errorCode = typeof paymentError === "object" ? String(paymentError["@_code"] ?? "") : "";
+  const errorMessage = typeof paymentError === "object"
+    ? String(paymentError["#text"] ?? "")
+    : String(paymentError ?? "");
 
   let status: IpnResponse["status"] = "pending";
-  if (rawStatus === "paid" || rawStatus === "confirmed") {
+  if (errorCode && errorCode !== "0") {
+    status = action === "canceled" ? "cancelled" : "error";
+  } else if (action === "paid" || action === "confirmed") {
     status = "paid";
-  } else if (rawStatus === "canceled" || rawStatus === "cancelled") {
+  } else if (action === "canceled" || action === "cancelled") {
     status = "cancelled";
-  } else if (rawStatus === "error" || rawStatus === "rejected") {
-    status = "error";
   }
 
-  // Extract transaction ID and order ID, handling attribute-wrapped values
-  let transactionId: string | undefined;
-  if (transaction) {
-    if (typeof transaction === "object") {
-      transactionId =
-        (transaction as Record<string, unknown>)["@_id"] as string | undefined ??
-        String((transaction as Record<string, unknown>)["#text"] ?? "");
-    } else {
-      transactionId = String(transaction);
-    }
-  }
+  const transactionId = mobilpay["purchase"] === undefined
+    ? undefined
+    : String(mobilpay["purchase"]);
 
   let orderId: string | undefined;
   if (typeof order === "object" && order !== null) {
@@ -890,11 +748,11 @@ function parseIpnFromXml(config: NetopiaConfig, xml: string): IpnResponse {
 
   const amount =
     invoice && typeof invoice === "object"
-      ? (invoice as Record<string, unknown>)["amount"] as string | undefined
+      ? String(mobilpay["original_amount"] ?? invoice["@_amount"] ?? "") || undefined
       : undefined;
   const currency =
     invoice && typeof invoice === "object"
-      ? (invoice as Record<string, unknown>)["currency"] as string | undefined
+      ? String(invoice["@_currency"] ?? "") || undefined
       : undefined;
 
   return {
@@ -903,7 +761,7 @@ function parseIpnFromXml(config: NetopiaConfig, xml: string): IpnResponse {
     orderId,
     amount,
     currency,
-    rawPayload: parsed,
+    errorMessage: status === "error" ? errorMessage || "Payment rejected" : undefined,
   };
 }
 

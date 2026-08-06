@@ -2,8 +2,6 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-console.log("API VERSION: 2026-08-02 A");
-
 type EnvMap = Record<string, string>;
 
 const loadedFromFile = new Set<string>();
@@ -106,29 +104,9 @@ function loadNearestEnvFiles(startDir: string): string[] {
   return loadedFiles;
 }
 
-const loadedEnvFiles = loadNearestEnvFiles(process.cwd());
+loadNearestEnvFiles(process.cwd());
 
-if (loadedEnvFiles.length > 0) {
-  console.log(`[bootstrap] Loaded env file(s): ${loadedEnvFiles.join(", ")}`);
-}
-
-console.log(
-  JSON.stringify(
-    {
-      bootstrap: true,
-      cwd: process.cwd(),
-      loadedEnvFiles,
-      nodeEnv: process.env["NODE_ENV"] ?? null,
-      netopiaSandbox: process.env["NETOPIA_SANDBOX"] ?? null,
-      appBaseUrl: process.env["APP_BASE_URL"] ?? null,
-      logFilePath: process.env["LOG_FILE_PATH"] ?? null,
-    },
-    null,
-    2,
-  ),
-);
-
-const [{ default: app }, { logger }, { getNetopiaStartupDiagnostics, loadConfigFromEnv }, { ensureLabelsSeeded }] =
+const [{ default: app }, { logger }, { loadConfigFromEnv }, { ensureLabelsSeeded }] =
   await Promise.all([
     import("./app"),
     import("./lib/logger"),
@@ -179,38 +157,7 @@ process.on("SIGTERM", () => {
   process.exit(0);
 });
 
-const netopiaConfig = loadConfigFromEnv();
-const netopiaDiagnostics = getNetopiaStartupDiagnostics(netopiaConfig);
-
-logger.info(
-  {
-    netopia: netopiaDiagnostics,
-  },
-  "Netopia startup self-test",
-);
-
-if (!netopiaDiagnostics.publicKeyValid || !netopiaDiagnostics.privateKeyValid) {
-  logger.warn(
-    {
-      netopia: netopiaDiagnostics,
-    },
-    "Netopia keys are not fully loadable",
-  );
-}
-
-if (!netopiaDiagnostics.sandbox) {
-  if (!netopiaDiagnostics.publicKeyValid || !netopiaDiagnostics.privateKeyValid) {
-    throw new Error(
-      "Invalid Netopia production configuration: public/private RSA keys must be configured and valid when NETOPIA_SANDBOX=false.",
-    );
-  }
-
-  // if (netopiaDiagnostics.keyPairMatches === false) {
-  //   throw new Error(
-  //     "Invalid Netopia production configuration: Netopia public/private key pair fingerprints do not match.",
-  //   );
-  // }
-}
+loadConfigFromEnv();
 
 await ensureLabelsSeeded();
 

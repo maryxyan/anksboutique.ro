@@ -621,6 +621,80 @@ ALTER TABLE ONLY public.wishlist_items
 
 
 --
+-- Name: labels; Type: TABLE; Schema: public; Owner: postgres
+--
+
+CREATE TABLE public.labels (
+    id integer NOT NULL,
+    name text NOT NULL,
+    slug text NOT NULL,
+    description text,
+    sort_order integer DEFAULT 0 NOT NULL,
+    status text DEFAULT 'active'::text NOT NULL,
+    created_at timestamp without time zone DEFAULT now() NOT NULL
+);
+
+
+ALTER TABLE public.labels OWNER TO postgres;
+
+--
+-- Name: labels_id_seq; Type: SEQUENCE; Schema: public; Owner: postgres
+--
+
+CREATE SEQUENCE public.labels_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+
+ALTER SEQUENCE public.labels_id_seq OWNER TO postgres;
+
+--
+-- Name: labels_id_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: postgres
+--
+
+ALTER SEQUENCE public.labels_id_seq OWNED BY public.labels.id;
+
+--
+-- Name: labels id; Type: DEFAULT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.labels ALTER COLUMN id SET DEFAULT nextval('public.labels_id_seq'::regclass);
+
+--
+-- Data for Name: labels; Type: TABLE DATA; Schema: public; Owner: postgres
+--
+
+COPY public.labels (id, name, slug, description, sort_order, status, created_at) FROM stdin;
+1	New	new	Eticheta pentru produse noi	1	active	2026-05-25 09:30:01.867217
+2	Best Seller	best-seller	Cele mai vandute produse	2	active	2026-05-25 09:30:01.867217
+3	Limited	limited	Colectie limitata	3	active	2026-05-25 09:30:01.867217
+\.
+
+--
+-- Name: labels_id_seq; Type: SEQUENCE SET; Schema: public; Owner: postgres
+--
+
+SELECT pg_catalog.setval('public.labels_id_seq', 3, true);
+
+--
+-- Name: labels labels_pkey; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.labels
+    ADD CONSTRAINT labels_pkey PRIMARY KEY (id);
+
+--
+-- Name: labels labels_slug_key; Type: CONSTRAINT; Schema: public; Owner: postgres
+--
+
+ALTER TABLE ONLY public.labels
+    ADD CONSTRAINT labels_slug_key UNIQUE (slug);
+
+--
 -- PostgreSQL database dump complete
 --
 

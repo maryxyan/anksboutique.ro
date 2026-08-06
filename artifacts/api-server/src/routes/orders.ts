@@ -14,10 +14,9 @@ import {
   buildIpnConfirmationXml,
   loadConfigFromEnv,
   createSandboxStubConfig,
-  getNetopiaStartupDiagnostics,
 } from "../lib/netopia";
 import { logger } from "../lib/logger";
-import { spawn } from "node:child_process";
+import { sendHtmlEmail } from "../lib/mailer";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -57,6 +56,7 @@ async function getReceiptHtml(orderId: number): Promise<string | null> {
 
   const isPaid = order.paymentStatus === "paid";
   const isPending = order.paymentStatus === "pending";
+  const isCancelled = order.paymentStatus === "cancelled";
 
   let statusClass: string;
   let statusIcon: string;
@@ -73,14 +73,19 @@ async function getReceiptHtml(orderId: number): Promise<string | null> {
     statusIcon = "&#8987;";
     statusTitle = "Plat&#259; &#238;n a&#351;teptare";
     statusMessage = "Plata nu a fost &#238;nc&#259; confirmat&#259;. Te rug&#259;m s&#259; a&#351;tep&#355;i sau s&#259; verifici statusul comenzii.";
+  } else if (isCancelled) {
+    statusClass = "error";
+    statusIcon = "&#10007;";
+    statusTitle = "Plata a fost anulat&#259;";
+    statusMessage = "Nu ai fost taxat&#259;. Po&#355;i reveni &#238;n magazin pentru a plasa din nou comanda.";
   } else {
     statusClass = "error";
     statusIcon = "&#10007;";
-    statusTitle = "Plata nu a fost procesat&#259;";
-    statusMessage = "Plata nu a putut fi procesat&#259;. Te rug&#259;m s&#259; &#238;ncerei din nou sau s&#259; folose&#351;ti o alt&#259; metod&#259; de plat&#259;.";
+    statusTitle = "Plata nu a reu&#351;it";
+    statusMessage = "Plata nu a putut fi procesat&#259;. Nu ai fost taxat&#259;. Te rug&#259;m s&#259; &#238;ncerci din nou sau s&#259; folose&#351;ti o alt&#259; metod&#259; de plat&#259;.";
   }
 
-  const paymentStatusLabel = isPaid ? "Pl&#259;tit" : isPending ? "&#206;n a&#351;teptare" : "Nepl&#259;tit";
+  const paymentStatusLabel = isPaid ? "Pl&#259;tit" : isPending ? "&#206;n a&#351;teptare" : isCancelled ? "Anulat" : "E&#351;uat";
 
   const orderItemsHtml = items
     .map(
@@ -143,6 +148,56 @@ function escapeHtml(str: string): string {
     .replace(/>/g, gt)
     .replace(/"/g, quot)
     .replace(/'/g, apos);
+}
+
+function emailShell(title: string, body: string): string {
+  return `<!doctype html><html lang="ro"><body style="margin:0;background:#f5f3ef;font-family:Arial,sans-serif;color:#24211d"><div style="max-width:640px;margin:0 auto;padding:32px 20px"><div style="background:#fff;padding:32px;border:1px solid #e8e2da"><h1 style="font-family:Georgia,serif;font-size:26px;font-weight:normal;margin:0 0 24px">${title}</h1>${body}<p style="margin:28px 0 0;color:#716b63;font-size:13px">Ank's Boutique · <a href="mailto:contact@anksboutique.ro">contact@anksboutique.ro</a></p></div></div></body></html>`;
+}
+
+async function getOrderEmailDetails(order: typeof ordersTable.$inferSelect) {
+  const items = await db.select().from(orderItemsTable).where(eq(orderItemsTable.orderId, order.id));
+  const itemRows = items.map((item) => `<li>${escapeHtml(item.productTitle)} × ${item.quantity}${item.size ? ` (mărimea ${escapeHtml(item.size)})` : ""} — ${Number(item.price).toFixed(2)} RON</li>`).join("");
+  return { items, itemRows };
+}
+
+async function sendPaidNotifications(orderId: number): Promise<void> {
+  let [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, orderId));
+  if (!order) return;
+  const { itemRows } = await getOrderEmailDetails(order);
+
+  if (!order.confirmationEmailSentAt) {
+    await sendHtmlEmail({
+      to: order.customerEmail,
+      subject: `Confirmare comandă #${order.id} - Ank's Boutique`,
+      html: emailShell("Plata a fost confirmată", `<p>Bună, ${escapeHtml(order.customerName)}!</p><p>Am primit plata pentru comanda <strong>#${order.id}</strong> și am început procesarea ei.</p><ul>${itemRows}</ul><p><strong>Total: ${Number(order.total).toFixed(2)} RON</strong></p><p>Te vom contacta când coletul este pregătit pentru expediere.</p>`),
+    });
+    await db.update(ordersTable).set({ confirmationEmailSentAt: new Date() }).where(eq(ordersTable.id, order.id));
+  }
+
+  [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, orderId));
+  if (order && !order.adminNotificationSentAt) {
+    await sendHtmlEmail({
+      to: process.env["ADMIN_EMAIL"]?.trim() || "contact@anksboutique.ro",
+      subject: `Comandă nouă plătită #${order.id}`,
+      html: emailShell("Comandă nouă plătită", `<p><strong>Comanda:</strong> #${order.id}</p><p><strong>Client:</strong> ${escapeHtml(order.customerName)}<br><strong>Email:</strong> ${escapeHtml(order.customerEmail)}<br><strong>Telefon:</strong> ${escapeHtml(order.customerPhone)}</p><ul>${itemRows}</ul><p><strong>Total: ${Number(order.total).toFixed(2)} RON</strong></p><p><strong>Livrare:</strong> ${escapeHtml(order.shippingAddress ?? "")}, ${escapeHtml(order.city ?? "")}, ${escapeHtml(order.county ?? "")}</p>`),
+    });
+    await db.update(ordersTable).set({ adminNotificationSentAt: new Date() }).where(eq(ordersTable.id, order.id));
+  }
+}
+
+async function sendUnsuccessfulPaymentEmail(orderId: number, kind: "failed" | "cancelled"): Promise<void> {
+  const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, orderId));
+  if (!order) return;
+  const sentAt = kind === "failed" ? order.failedPaymentEmailSentAt : order.cancelledPaymentEmailSentAt;
+  if (sentAt) return;
+
+  const failed = kind === "failed";
+  await sendHtmlEmail({
+    to: order.customerEmail,
+    subject: `${failed ? "Plata nu a reușit" : "Plata a fost anulată"} - comanda #${order.id}`,
+    html: emailShell(failed ? "Plata nu a reușit" : "Plata a fost anulată", `<p>Bună, ${escapeHtml(order.customerName)}!</p><p>${failed ? "Plata pentru comanda ta nu a putut fi procesată." : "Ai anulat plata pentru această comandă."}</p><p>Nu ai fost taxată. Poți reveni în magazin pentru a plasa din nou comanda sau ne poți contacta dacă ai nevoie de ajutor.</p><p><a href="${escapeHtml(process.env["FRONTEND_URL"]?.trim() || "https://anksboutique.ro")}/shop">Înapoi în magazin</a></p>`),
+  });
+  await db.update(ordersTable).set(failed ? { failedPaymentEmailSentAt: new Date() } : { cancelledPaymentEmailSentAt: new Date() }).where(eq(ordersTable.id, order.id));
 }
 
 /**
@@ -328,13 +383,6 @@ router.post("/orders", async (req, res): Promise<void> => {
       await tx.delete(cartItemsTable).where(eq(cartItemsTable.sessionId, sessionId));
 
       const netopiaConfig = getNetopiaConfig();
-      console.log("========== NETOPIA NEW ROUTE ==========");
-      console.log("encryptPaymentRequest is being called");
-      console.log({
-        merchantId: netopiaConfig.merchantId,
-        sandbox: netopiaConfig.sandbox,
-        hasPublicKey: !!netopiaConfig.publicKey,
-      });
       const paymentRequest = encryptPaymentRequest(netopiaConfig, {
         orderId: netopiaOrderId,
         amount: total.toFixed(2),
@@ -348,8 +396,6 @@ router.post("/orders", async (req, res): Promise<void> => {
         description: `Comanda #${order.id} - Anks Boutique (${cartItems.length} produse)`,
       });
 
-      console.log(paymentRequest);
-
       return {
         order,
         paymentRequest,
@@ -362,7 +408,6 @@ router.post("/orders", async (req, res): Promise<void> => {
         orderId: result.order.id,
         netopiaOrderId,
         paymentUrl: result.paymentRequest.paymentUrl,
-        netopia: getNetopiaStartupDiagnostics(result.netopiaConfig),
       },
       "Netopia payment request prepared",
     );
@@ -460,62 +505,38 @@ router.patch("/orders/:id/status", async (req, res): Promise<void> => {
  * - Error: `<crc error_type="X" error_code="Y">Message</crc>`
  */
 router.post("/payments/netopia/callback", async (req: Request, res: Response): Promise<void> => {
-  const { env_key, data, cipher, iv } = req.body;
+  const { env_key, data, cipher, iv } = req.body ?? {};
   const requestId = (req as Request & { id?: string }).id;
 
-  logger.info(
-    {
-      requestId,
-      hasEnvKey: !!env_key,
-      envKeyLength: env_key ? env_key.length : 0,
-      hasData: !!data,
-      dataLength: data ? data.length : 0,
-      contentType: req.headers["content-type"],
-      bodyKeys: Object.keys(req.body),
-    },
-    "Netopia IPN callback received",
-  );
-
-  if (!env_key || !data) {
+  if (typeof env_key !== "string" || !env_key || typeof data !== "string" || !data) {
     logger.warn(
       {
         requestId,
-        bodyKeys: Object.keys(req.body),
+        bodyKeys: Object.keys(req.body ?? {}),
       },
       "Netopia IPN callback missing env_key or data",
     );
     res.set("Content-Type", "text/xml");
-    res.status(400).send(
-      buildIpnConfirmationXml({ type: "1", code: "1", message: "Missing env_key or data" }),
+    res.status(200).send(
+      buildIpnConfirmationXml({ type: "2", code: "1", message: "Missing env_key or data" }),
     );
     return;
   }
 
   try {
     const netopiaConfig = getNetopiaConfig();
-    logger.info(
-      {
-        requestId,
-        netopia: getNetopiaStartupDiagnostics(netopiaConfig),
-      },
-      "Starting Netopia IPN decryption",
-    );
-    const ipnResult = decryptIpnResponse(netopiaConfig, env_key, data, cipher, iv);
-    logger.info(
-      {
-        requestId,
-        status: ipnResult.status,
-        orderId: ipnResult.orderId,
-        transactionId: ipnResult.transactionId,
-        amount: ipnResult.amount,
-        currency: ipnResult.currency,
-        errorMessage: ipnResult.errorMessage,
-        errorStage: ipnResult.errorStage,
-      },
-      "Netopia IPN decryption completed",
+    const ipnResult = decryptIpnResponse(
+      netopiaConfig,
+      env_key,
+      data,
+      typeof cipher === "string" ? cipher : undefined,
+      typeof iv === "string" ? iv : undefined,
     );
 
-    if (ipnResult.status === "error") {
+    // An error without an order ID means the callback itself could not be
+    // decrypted/parsed. A rejected payment, however, is a valid callback and
+    // includes the order ID; it must update the order and notify the customer.
+    if (ipnResult.status === "error" && !ipnResult.orderId) {
       logger.warn(
         {
           requestId,
@@ -543,7 +564,23 @@ router.post("/payments/netopia/callback", async (req: Request, res: Response): P
         .from(ordersTable)
         .where(eq(ordersTable.netopiaOrderId, ipnResult.orderId));
 
-      if (order) {
+      if (!order) {
+        res.set("Content-Type", "text/xml");
+        res.send(buildIpnConfirmationXml({ type: "2", code: "2", message: "Unknown order" }));
+        return;
+      }
+
+      const callbackAmount = Number(ipnResult.amount);
+      const amountMatches = ipnResult.amount !== undefined && Number.isFinite(callbackAmount) && callbackAmount === Number(order.total);
+      const currencyMatches = ipnResult.currency?.toUpperCase() === "RON";
+      if (!amountMatches || !currencyMatches) {
+        logger.warn({ requestId, orderId: order.id }, "Rejected NETOPIA callback with mismatched payment details");
+        res.set("Content-Type", "text/xml");
+        res.send(buildIpnConfirmationXml({ type: "2", code: "3", message: "Payment details mismatch" }));
+        return;
+      }
+
+      {
         let updateData: Partial<typeof ordersTable.$inferInsert> = {};
 
         switch (ipnResult.status) {
@@ -559,6 +596,12 @@ router.post("/payments/netopia/callback", async (req: Request, res: Response): P
               status: "cancelled",
             };
             break;
+          case "error":
+            updateData = {
+              paymentStatus: "failed",
+              status: "cancelled",
+            };
+            break;
           case "pending":
           default:
             updateData = {
@@ -567,7 +610,35 @@ router.post("/payments/netopia/callback", async (req: Request, res: Response): P
             break;
         }
 
-        await db.update(ordersTable).set(updateData).where(eq(ordersTable.id, order.id));
+        const transitionedOrder = await db.transaction(async (tx) => {
+          const [updated] = await tx
+            .update(ordersTable)
+            .set(updateData)
+            .where(and(eq(ordersTable.id, order.id), eq(ordersTable.paymentStatus, "pending")))
+            .returning();
+
+          // Inventory was reserved when checkout started. Release it once when
+          // the payment reaches an unsuccessful terminal state.
+          if (updated && (ipnResult.status === "cancelled" || ipnResult.status === "error")) {
+            const items = await tx.select().from(orderItemsTable).where(eq(orderItemsTable.orderId, order.id));
+            for (const item of items) {
+              await tx
+                .update(productsTable)
+                .set({ stock: sql`${productsTable.stock} + ${item.quantity}` })
+                .where(eq(productsTable.id, item.productId));
+            }
+          }
+          return updated;
+        });
+
+        const effectivePaymentStatus = transitionedOrder?.paymentStatus ?? order.paymentStatus;
+        if (ipnResult.status === "paid" && effectivePaymentStatus === "paid") {
+          await sendPaidNotifications(order.id);
+        } else if (ipnResult.status === "cancelled" && effectivePaymentStatus === "cancelled") {
+          await sendUnsuccessfulPaymentEmail(order.id, "cancelled");
+        } else if (ipnResult.status === "error" && effectivePaymentStatus === "failed") {
+          await sendUnsuccessfulPaymentEmail(order.id, "failed");
+        }
       }
     }
 
@@ -626,73 +697,8 @@ router.get("/payments/netopia/return", async (req: Request, res: Response): Prom
     res.set("Content-Type", "text/html; charset=utf-8");
     res.send(html);
   } catch (error) {
-    console.error("[Netopia Return] Error rendering receipt:", error);
+    logger.error({ err: error, orderId: orderIdParam }, "Error rendering Netopia receipt");
     res.status(500).send("Eroare intern&#259;");
-  }
-});
-
-router.get("/debug/netopia-config", (_req: Request, res: Response): void => {
-  try {
-    const netopiaConfig = loadConfigFromEnv();
-    const diagnostics = getNetopiaStartupDiagnostics(netopiaConfig);
-
-    res.json({
-      sandbox: diagnostics.sandbox,
-      sandboxRaw: process.env["NETOPIA_SANDBOX"] ?? null,
-      nodeEnv: process.env["NODE_ENV"] ?? null,
-      merchantIdPresent: Boolean(netopiaConfig.merchantId),
-      merchantIdLength: netopiaConfig.merchantId.length,
-      paymentUrl: diagnostics.paymentUrl,
-      publicKeyLoaded: Boolean(netopiaConfig.publicKey),
-      privateKeyLoaded: Boolean(netopiaConfig.privateKey),
-      publicKeyValid: diagnostics.publicKeyValid,
-      privateKeyValid: diagnostics.privateKeyValid,
-      keyPairMatches: diagnostics.keyPairMatches,
-    });
-  } catch (error) {
-    logger.error({ err: error }, "Failed to load Netopia debug config");
-    res.status(500).json({
-      error: "Failed to load Netopia config",
-      details: error instanceof Error ? error.message : String(error),
-    });
-  }
-});
-
-router.post("/debug/restart-api", async (_req: Request, res: Response): Promise<void> => {
-  if (process.env["DEBUG_ALLOW_SCRIPT_RUN"] !== "true") {
-    res.status(403).json({ error: "Script execution is disabled." });
-    return;
-  }
-
-  const repoRoot = path.resolve(__dirname, "../../../..");
-  const command = "pnpm";
-  const args = ["--dir", repoRoot, "--filter", "@workspace/scripts", "run", "restart-api"];
-
-  try {
-    const child = spawn(command, args, {
-      cwd: repoRoot,
-      shell: true,
-      detached: true,
-      stdio: "ignore",
-    });
-
-    child.unref();
-
-    res.status(202).json({
-      status: "restart-scheduled",
-      message: "Restart script has been triggered.",
-    });
-  } catch (error) {
-    logger.error(
-      {
-        err: error,
-        repoRoot,
-        command,
-        args,
-      },
-      "Failed to start API restart script",
-    );
-    res.status(500).json({ error: String(error) });
   }
 });
 

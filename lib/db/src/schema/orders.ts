@@ -18,6 +18,10 @@ export const ordersTable = pgTable("orders", {
   paymentMethod: text("payment_method"),
   netopiaOrderId: text("netopia_order_id"),
   sessionId: text("session_id"),
+  confirmationEmailSentAt: timestamp("confirmation_email_sent_at"),
+  adminNotificationSentAt: timestamp("admin_notification_sent_at"),
+  failedPaymentEmailSentAt: timestamp("failed_payment_email_sent_at"),
+  cancelledPaymentEmailSentAt: timestamp("cancelled_payment_email_sent_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
