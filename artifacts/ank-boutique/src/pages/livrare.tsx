@@ -1,4 +1,4 @@
-import { Truck, RotateCcw, Clock, MapPin, CreditCard, AlertCircle } from "lucide-react";
+import { Truck, RotateCcw, MapPin, CreditCard, AlertCircle } from "lucide-react";
 import { Helmet } from "react-helmet-async";
 import { Layout } from "@/components/layout/Layout";
 
@@ -21,33 +21,24 @@ export default function LivrareRetururi() {
             <h2 className="text-xl font-serif uppercase tracking-widest">Livrare</h2>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-border">
-            <div className="bg-background p-6 space-y-3">
-              <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-widest">
-                <Clock className="w-4 h-4" />
-                Standard
-              </div>
-              <p className="text-3xl font-serif">Gratuit</p>
-              <p className="text-sm text-muted-foreground">pentru comenzi peste 300 RON</p>
-              <p className="text-sm text-muted-foreground">3–5 zile lucrătoare</p>
-            </div>
-            <div className="bg-background p-6 space-y-3">
-              <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-widest">
-                <Clock className="w-4 h-4" />
-                Expresă
-              </div>
-              <p className="text-3xl font-serif">25 RON</p>
-              <p className="text-sm text-muted-foreground">livrare în 24–48 ore</p>
-              <p className="text-sm text-muted-foreground">disponibilă pentru orice comandă</p>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-border">
             <div className="bg-background p-6 space-y-3">
               <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-widest">
                 <MapPin className="w-4 h-4" />
-                Standard
+                Sameday easybox
               </div>
-              <p className="text-3xl font-serif">15 RON</p>
-              <p className="text-sm text-muted-foreground">pentru comenzi sub 300 RON</p>
-              <p className="text-sm text-muted-foreground">3–5 zile lucrătoare</p>
+              <p className="text-3xl font-serif">de la 20,90 RON</p>
+              <p className="text-sm text-muted-foreground">primul kilogram</p>
+              <p className="text-sm text-muted-foreground">livrare în locker, începând cu 24 de ore</p>
+            </div>
+            <div className="bg-background p-6 space-y-3">
+              <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-widest">
+                <Truck className="w-4 h-4" />
+                Sameday la adresă
+              </div>
+              <p className="text-3xl font-serif">de la 27,50 RON</p>
+              <p className="text-sm text-muted-foreground">primul kilogram</p>
+              <p className="text-sm text-muted-foreground">livrare Next Day, începând cu 24 de ore</p>
             </div>
           </div>
 
@@ -55,9 +46,10 @@ export default function LivrareRetururi() {
             <p className="font-medium text-foreground">Informații importante despre livrare:</p>
             <ul className="space-y-2 list-disc list-inside">
               <li>Comenzile plasate înainte de ora 14:00 sunt procesate în aceeași zi lucrătoare.</li>
-              <li>Livrăm prin Fan Courier și DPD pe tot teritoriul României.</li>
+              <li>Livrăm prin Sameday la adresă sau într-un easybox disponibil, pe teritoriul României.</li>
+              <li>Tarifele afișate sunt tarife de pornire; costul final poate varia în funcție de greutate, destinație, TVA, indexul de combustibil și serviciile adiționale.</li>
               <li>Vei primi un email cu numărul de urmărire imediat ce coletul este preluat de curier.</li>
-              <li>Livrarea se face la adresa indicată în comandă — ne asigurăm că ambalajul este discret și elegant.</li>
+              <li>Pentru livrarea la adresă, coletul este expediat la adresa indicată în comandă. Pentru easybox, vei putea selecta lockerul dorit la finalizarea comenzii.</li>
               <li>Momentan livrăm exclusiv în România.</li>
             </ul>
           </div>
@@ -93,7 +85,7 @@ export default function LivrareRetururi() {
                 </li>
                 <li className="flex gap-3">
                   <span className="font-serif text-foreground font-medium w-5 shrink-0">3.</span>
-                  <span>Predai coletul la orice punct Fan Courier din România.</span>
+                  <span>Predai coletul conform instrucțiunilor Sameday primite pe email, prin curier sau la easybox, dacă opțiunea este disponibilă pentru retur.</span>
                 </li>
                 <li className="flex gap-3">
                   <span className="font-serif text-foreground font-medium w-5 shrink-0">4.</span>
