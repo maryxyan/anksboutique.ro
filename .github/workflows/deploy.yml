@@ -1,4 +1,4 @@
-name: Build & Verify for Railway
+name: Build, Verify & Deploy to Railway
 
 on:
   push:
@@ -58,6 +58,26 @@ jobs:
           BASE_PATH: /
         run: pnpm --filter @workspace/ank-boutique build
 
-      - name: Railway deployment handoff
+      - name: Install Railway CLI
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: echo "Build verified. Railway deploys this commit through its GitHub integration."
+        run: npm install --global @railway/cli
+
+      - name: Deploy frontend to Railway
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ] || [ -z "$RAILWAY_PROJECT_ID" ] || [ -z "$RAILWAY_SERVICE_ID" ]; then
+            echo "Missing one or more required Railway repository secrets."
+            echo "Required: RAILWAY_TOKEN, RAILWAY_PROJECT_ID, RAILWAY_SERVICE_ID"
+            exit 1
+          fi
+
+          railway up \
+            --ci \
+            --project "$RAILWAY_PROJECT_ID" \
+            --environment production \
+            --service "$RAILWAY_SERVICE_ID" \
+            --message "GitHub Actions deploy ${GITHUB_SHA}"
