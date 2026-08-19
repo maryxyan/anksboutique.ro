@@ -29,7 +29,7 @@ export default function LivrareRetururi() {
               </div>
               <p className="text-3xl font-serif">de la 20,90 RON</p>
               <p className="text-sm text-muted-foreground">primul kilogram</p>
-              <p className="text-sm text-muted-foreground">livrare în locker, începând cu 24 de ore</p>
+              <p className="text-sm text-muted-foreground">livrare la lockerul ales, în funcție de disponibilitate</p>
             </div>
             <div className="bg-background p-6 space-y-3">
               <div className="flex items-center gap-2 text-sm font-medium uppercase tracking-widest">
@@ -38,7 +38,7 @@ export default function LivrareRetururi() {
               </div>
               <p className="text-3xl font-serif">de la 27,50 RON</p>
               <p className="text-sm text-muted-foreground">primul kilogram</p>
-              <p className="text-sm text-muted-foreground">livrare Next Day, începând cu 24 de ore</p>
+              <p className="text-sm text-muted-foreground">livrare la adresa indicată în comandă</p>
             </div>
           </div>
 
@@ -48,8 +48,9 @@ export default function LivrareRetururi() {
               <li>Comenzile plasate înainte de ora 14:00 sunt procesate în aceeași zi lucrătoare.</li>
               <li>Livrăm prin Sameday la adresă sau într-un easybox disponibil, pe teritoriul României.</li>
               <li>Tarifele afișate sunt tarife de pornire; costul final poate varia în funcție de greutate, destinație, TVA, indexul de combustibil și serviciile adiționale.</li>
-              <li>Vei primi un email cu numărul de urmărire imediat ce coletul este preluat de curier.</li>
+              <li>După expediere, vei primi numărul AWB și notificările de livrare prin email, SMS sau aplicația SAMEDAY.</li>
               <li>Pentru livrarea la adresă, coletul este expediat la adresa indicată în comandă. Pentru easybox, vei putea selecta lockerul dorit la finalizarea comenzii.</li>
+              <li>La easybox, ridicarea se face cu PIN-ul sau codul QR primit de la SAMEDAY, în intervalul de păstrare indicat în notificare.</li>
               <li>Momentan livrăm exclusiv în România.</li>
             </ul>
           </div>
@@ -77,15 +78,15 @@ export default function LivrareRetururi() {
               <ol className="space-y-4 text-sm text-muted-foreground">
                 <li className="flex gap-3">
                   <span className="font-serif text-foreground font-medium w-5 shrink-0">1.</span>
-                  <span>Contactează-ne pe WhatsApp sau email cu numărul comenzii tale și motivul returului.</span>
+                  <span>Completează formularul de retur cu numărul comenzii și produsele pe care dorești să le returnezi.</span>
                 </li>
                 <li className="flex gap-3">
                   <span className="font-serif text-foreground font-medium w-5 shrink-0">2.</span>
-                  <span>Vei primi un email cu eticheta de retur prepaid — o tipărești și o lipești pe colet.</span>
+                  <span>După aprobarea cererii, vei primi prin email instrucțiunile SAMEDAY și codul PIN/QR pentru retur.</span>
                 </li>
                 <li className="flex gap-3">
                   <span className="font-serif text-foreground font-medium w-5 shrink-0">3.</span>
-                  <span>Predai coletul conform instrucțiunilor Sameday primite pe email, prin curier sau la easybox, dacă opțiunea este disponibilă pentru retur.</span>
+                  <span>Ambalează coletul corespunzător, îndepărtează etichetele vechi și predă-l la orice easybox SAMEDAY folosind PIN-ul sau codul QR. Coletul trebuie să aibă sub 20 kg și să încapă în sertar; nu este necesară tipărirea unei etichete.</span>
                 </li>
                 <li className="flex gap-3">
                   <span className="font-serif text-foreground font-medium w-5 shrink-0">4.</span>

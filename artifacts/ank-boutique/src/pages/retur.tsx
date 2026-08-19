@@ -156,7 +156,7 @@ export default function ReturPage() {
               <CheckCircle className="w-16 h-16 text-green-600 mx-auto" />
               <h1 className="text-2xl font-serif">Cerere trimisă cu succes!</h1>
               <p className="text-muted-foreground">
-                Am primit cererea ta de retur. Vom verifica informațiile și vei primi un email cu eticheta de retur în maxim 24 de ore.
+                Am primit cererea ta de retur. După verificare, vei primi prin email instrucțiunile SAMEDAY și codul PIN/QR pentru predarea coletului la easybox.
               </p>
               <p className="text-muted-foreground">
                 Dacă ai întrebări, ne poți contacta la <strong>contact@anksboutique.ro</strong>.
@@ -186,7 +186,10 @@ export default function ReturPage() {
           </div>
           <h1 className="text-3xl font-serif mb-3">Formular de Retur Produse</h1>
           <p className="text-muted-foreground max-w-xl mx-auto text-sm leading-relaxed">
-            Vă rugăm să completați acest formular și să îl trimiteți doar dacă doriți să vă retrageți din contract (să returnați produsele).
+            Completează cererea pentru produsele pe care dorești să le returnezi. După aprobare, îți trimitem prin email PIN-ul și codul QR necesare returului la easybox.
+          </p>
+          <p className="text-muted-foreground max-w-xl mx-auto text-xs leading-relaxed mt-3">
+            Ambalează produsele corespunzător și îndepărtează etichetele vechi. Coletul trebuie să aibă sub 20 kg și să încapă într-un sertar; returul la easybox nu necesită tipărirea unei etichete.
           </p>
         </div>
 
@@ -240,7 +243,7 @@ export default function ReturPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="shippingAddress">Adresă de livrare (pentru curier)</Label>
+                  <Label htmlFor="shippingAddress">Adresă de ridicare (doar dacă este necesar un curier)</Label>
                   <Input
                     id="shippingAddress"
                     value={shippingAddress}
@@ -513,6 +516,9 @@ export default function ReturPage() {
             <p>
               Rambursarea se face în maxim 14 zile de la primirea coletului, prin aceeași metodă de plată utilizată la achiziție
               sau în contul bancar indicat mai sus.
+            </p>
+            <p>
+              După aprobarea returului la easybox, PIN-ul și codul QR primite sunt valabile la orice easybox SAMEDAY pentru perioada indicată în email. Dacă expiră, contactează-ne pentru emiterea unui nou cod.
             </p>
           </div>
 
