@@ -6,7 +6,6 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface SuccessResponse {
-  success: boolean;
-  message: string;
-}
+export type NetopiaReturnParams = {
+orderId: string;
+};

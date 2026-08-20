@@ -2,7 +2,7 @@
 
 Production is deployed through Railway. The former Romarg FTP/Node deployment is retired and must not be restarted.
 
-The `Build & Verify for Railway` GitHub Actions workflow validates every push to `main`. Railway's GitHub integration performs the actual deployment; the workflow does not require a `RAILWAY_TOKEN` and does not upload files over FTP.
+The `Build, Verify & Deploy to Railway` GitHub Actions workflow validates every push to `main` and deploys the configured Railway service with the Railway CLI. It requires a production-environment project token in the GitHub secret `RAILWAY_TOKEN` and the target service ID in `RAILWAY_SERVICE_ID`. The project token itself determines the Railway project and environment.
 
 ## Railway services
 
@@ -32,6 +32,12 @@ Set secrets only in Railway; never commit values or certificate files.
 - `APP_BASE_URL`
 - `FRONTEND_URL`
 - `PORT` (normally injected by Railway)
+- `SAMEDAY_USERNAME`
+- `SAMEDAY_PASSWORD`
+- `SAMEDAY_PICKUP_POINT_ID`
+- `SAMEDAY_CONTACT_PERSON_ID`
+
+The Sameday API defaults to `https://api.sameday.ro`, home service `7`, locker service `15`, and a 1 kg parcel. Override these with `SAMEDAY_API_URL`, `SAMEDAY_HOME_SERVICE_ID`, `SAMEDAY_LOCKER_SERVICE_ID`, and `SAMEDAY_DEFAULT_PACKAGE_WEIGHT` when the Sameday account requires different values.
 
 Set `NETOPIA_API_KEY` only when a JSON API feature actually uses it. The legacy XML checkout does not use it.
 

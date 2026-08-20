@@ -28,6 +28,8 @@ tags:
     description: Admin operations
   - name: upload
     description: File upload operations
+  - name: shipping
+    description: Sameday shipping operations
 
 paths:
   /healthz:
@@ -399,6 +401,71 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Order"
+
+  /orders/{id}/awb:
+    post:
+      operationId: createSamedayAwb
+      tags: [shipping]
+      summary: Create or retrieve the Sameday AWB for a paid order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAwbInput"
+      responses:
+        "200":
+          description: Existing AWB
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SamedayAwb"
+        "201":
+          description: AWB created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SamedayAwb"
+
+  /shipping/ooh-locations:
+    get:
+      operationId: listSamedayOohLocations
+      tags: [shipping]
+      summary: List available Sameday easybox locations
+      parameters:
+        - name: county
+          in: query
+          schema:
+            type: string
+        - name: city
+          in: query
+          schema:
+            type: string
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: countPerPage
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Available easybox locations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SamedayOohList"
 
   # Wishlist
   /wishlist:
@@ -826,6 +893,21 @@ components:
           type: ["string", "null"]
         postalCode:
           type: ["string", "null"]
+        deliveryMethod:
+          type: string
+          enum: [home, easybox]
+        samedayOohId:
+          type: ["integer", "null"]
+        samedayOohName:
+          type: ["string", "null"]
+        samedayOohAddress:
+          type: ["string", "null"]
+        samedayAwbNumber:
+          type: ["string", "null"]
+        samedayAwbCost:
+          type: ["number", "null"]
+        samedayAwbPdfUrl:
+          type: ["string", "null"]
         total:
           type: number
         status:
@@ -884,6 +966,71 @@ components:
           type: string
         notes:
           type: string
+        deliveryMethod:
+          type: string
+          enum: [home, easybox]
+          default: home
+        samedayOohId:
+          type: integer
+
+    CreateAwbInput:
+      type: object
+      properties:
+        packageWeight:
+          type: number
+          minimum: 0.01
+          maximum: 38
+
+    SamedayAwb:
+      type: object
+      required: [awbNumber]
+      properties:
+        awbNumber:
+          type: string
+        awbCost:
+          type: ["number", "null"]
+        pdfLink:
+          type: ["string", "null"]
+
+    SamedayOohLocation:
+      type: object
+      required: [oohId, oohType, name, county, city, address, lat, lng, supportedPayment]
+      properties:
+        oohId:
+          type: integer
+        oohType:
+          type: integer
+        name:
+          type: string
+        county:
+          type: string
+        city:
+          type: string
+        address:
+          type: string
+        postalCode:
+          type: ["string", "null"]
+        lat:
+          type: number
+        lng:
+          type: number
+        supportedPayment:
+          type: integer
+
+    SamedayOohList:
+      type: object
+      required: [total, currentPage, pages, data]
+      properties:
+        total:
+          type: integer
+        currentPage:
+          type: integer
+        pages:
+          type: integer
+        data:
+          type: array
+          items:
+            $ref: "#/components/schemas/SamedayOohLocation"
 
     OrderCreatedResponse:
       type: object
@@ -1044,4 +1191,3 @@ components:
           type: array
           items:
             type: string
-

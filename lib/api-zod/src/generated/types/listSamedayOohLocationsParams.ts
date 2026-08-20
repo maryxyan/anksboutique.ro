@@ -6,7 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface SuccessResponse {
-  success: boolean;
-  message: string;
-}
+export type ListSamedayOohLocationsParams = {
+county?: string;
+city?: string;
+search?: string;
+page?: number;
+countPerPage?: number;
+};

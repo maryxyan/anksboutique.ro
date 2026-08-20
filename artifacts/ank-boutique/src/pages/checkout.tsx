@@ -1,7 +1,7 @@
 import { Helmet } from "react-helmet-async";
 import { Layout } from "@/components/layout/Layout";
 import { useState, useEffect, useRef } from "react";
-import { useGetCart, getGetCartQueryKey, useCreateOrder } from "@workspace/api-client-react";
+import { useGetCart, getGetCartQueryKey, useCreateOrder, useListSamedayOohLocations } from "@workspace/api-client-react";
 import { useSessionId } from "@/hooks/use-session";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
@@ -38,7 +38,19 @@ export default function Checkout() {
     county: "",
     postalCode: "",
     notes: "",
+    deliveryMethod: "home" as "home" | "easybox",
+    samedayOohId: null as number | null,
   });
+
+  const easyboxes = useListSamedayOohLocations(
+    { county: form.county || undefined, city: form.city || undefined, countPerPage: 100 },
+    {
+      query: {
+        enabled: form.deliveryMethod === "easybox" && !!form.county,
+        queryKey: ["sameday-ooh", form.county, form.city],
+      },
+    },
+  );
 
   const [paymentData, setPaymentData] = useState<{
     paymentUrl: string;
@@ -46,6 +58,7 @@ export default function Checkout() {
   } | null>(null);
 
   const [errors, setErrors] = useState<Partial<typeof form>>({});
+  const [easyboxError, setEasyboxError] = useState("");
 
   useEffect(() => {
     if (paymentData && formRef.current) {
@@ -62,8 +75,10 @@ export default function Checkout() {
     if (!form.city.trim()) e.city = "Câmp obligatoriu";
     if (!form.county) e.county = "Câmp obligatoriu";
     if (!form.postalCode.trim()) e.postalCode = "Câmp obligatoriu";
+    const missingEasybox = form.deliveryMethod === "easybox" && !form.samedayOohId;
+    setEasyboxError(missingEasybox ? "Selectează un easybox" : "");
     setErrors(e);
-    return Object.keys(e).length === 0;
+    return Object.keys(e).length === 0 && !missingEasybox;
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -71,7 +86,7 @@ export default function Checkout() {
     if (!validate() || !sessionId) return;
 
     createOrder.mutate(
-      { data: { ...form, sessionId } },
+      { data: { ...form, samedayOohId: form.samedayOohId ?? undefined, sessionId } },
       {
         onSuccess: (data) => {
           setPaymentData({
@@ -190,6 +205,26 @@ export default function Checkout() {
             </div>
 
             <div>
+              <h2 className="text-sm font-medium uppercase tracking-widest mb-4">Metodă de Livrare</h2>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-6">
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, deliveryMethod: "home", samedayOohId: null }))}
+                  className={`border p-4 text-left transition-colors ${form.deliveryMethod === "home" ? "border-foreground bg-muted" : "border-border"}`}
+                >
+                  <span className="block text-sm font-medium">Sameday la adresă</span>
+                  <span className="block text-xs text-muted-foreground mt-1">Livrare direct la adresa indicată</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, deliveryMethod: "easybox" }))}
+                  className={`border p-4 text-left transition-colors ${form.deliveryMethod === "easybox" ? "border-foreground bg-muted" : "border-border"}`}
+                >
+                  <span className="block text-sm font-medium">Sameday easybox</span>
+                  <span className="block text-xs text-muted-foreground mt-1">Ridicare din lockerul ales</span>
+                </button>
+              </div>
+
               <h2 className="text-sm font-medium uppercase tracking-widest mb-6">Adresă de Livrare</h2>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <Field label="Stradă" error={errors.shippingAddress} className="sm:col-span-2">
@@ -229,6 +264,35 @@ export default function Checkout() {
                     placeholder="010101"
                   />
                 </Field>
+                {form.deliveryMethod === "easybox" && (
+                  <Field label="Easybox" error={easyboxError} className="sm:col-span-2">
+                    <select
+                      value={form.samedayOohId ?? ""}
+                      onChange={(e) => {
+                        setForm((f) => ({ ...f, samedayOohId: e.target.value ? Number(e.target.value) : null }));
+                        setEasyboxError("");
+                      }}
+                      disabled={!form.county || easyboxes.isLoading}
+                      className={inputCls(!!easyboxError)}
+                    >
+                      <option value="">
+                        {!form.county
+                          ? "Selectează mai întâi județul"
+                          : easyboxes.isLoading
+                            ? "Se încarcă easybox-urile..."
+                            : "Selectează easybox-ul..."}
+                      </option>
+                      {easyboxes.data?.data.map((location) => (
+                        <option key={location.oohId} value={location.oohId}>
+                          {location.name} — {location.address}, {location.city}
+                        </option>
+                      ))}
+                    </select>
+                    {easyboxes.isError && (
+                      <p className="mt-1 text-xs text-destructive">Lista easybox nu este disponibilă momentan.</p>
+                    )}
+                  </Field>
+                )}
               </div>
             </div>
 

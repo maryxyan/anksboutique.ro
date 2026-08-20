@@ -12,6 +12,7 @@ import uploadRouter from "./upload";
 import sitemapRouter from "./sitemap";
 import accountRouter from "./account";
 import labelsRouter from "./labels";
+import shippingRouter from "./shipping";
 
 const router: IRouter = Router();
 
@@ -28,5 +29,6 @@ router.use(uploadRouter);
 router.use(sitemapRouter);
 router.use(accountRouter);
 router.use(labelsRouter);
+router.use(shippingRouter);
 
 export default router;

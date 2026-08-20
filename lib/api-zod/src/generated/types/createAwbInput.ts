@@ -6,7 +6,10 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export interface SuccessResponse {
-  success: boolean;
-  message: string;
+export interface CreateAwbInput {
+  /**
+     * @minimum 0.01
+     * @maximum 38
+     */
+  packageWeight?: number;
 }
