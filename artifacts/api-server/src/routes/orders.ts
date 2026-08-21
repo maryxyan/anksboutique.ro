@@ -17,6 +17,7 @@ import {
 } from "../lib/netopia";
 import { logger } from "../lib/logger";
 import { sendHtmlEmail } from "../lib/mailer";
+import { createAwb, listOohLocations } from "../lib/sameday";
 import * as fs from "node:fs";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -246,6 +247,13 @@ async function buildOrderResponse(order: any) {
     city: order.city,
     county: order.county,
     postalCode: order.postalCode,
+    deliveryMethod: order.deliveryMethod,
+    samedayOohId: order.samedayOohId,
+    samedayOohName: order.samedayOohName,
+    samedayOohAddress: order.samedayOohAddress,
+    samedayAwbNumber: order.samedayAwbNumber,
+    samedayAwbCost: order.samedayAwbCost == null ? null : parseFloat(order.samedayAwbCost),
+    samedayAwbPdfUrl: order.samedayAwbPdfUrl,
     total: parseFloat(order.total),
     status: order.status,
     paymentStatus: order.paymentStatus,
@@ -312,6 +320,26 @@ router.post("/orders", async (req, res): Promise<void> => {
 
   const { sessionId, ...orderData } = parsed.data;
 
+  let selectedOoh: Awaited<ReturnType<typeof listOohLocations>>["data"][number] | null = null;
+  if (orderData.deliveryMethod === "easybox") {
+    if (!orderData.samedayOohId) {
+      res.status(400).json({ error: "Selectează un easybox Sameday." });
+      return;
+    }
+    try {
+      const locations = await listOohLocations({ oohId: orderData.samedayOohId, countPerPage: 1 });
+      selectedOoh = locations.data.find((location) => location.oohId === orderData.samedayOohId) ?? null;
+      if (!selectedOoh) {
+        res.status(400).json({ error: "Easybox-ul selectat nu mai este disponibil." });
+        return;
+      }
+    } catch (error) {
+      logger.error({ err: error, oohId: orderData.samedayOohId }, "Failed to validate selected easybox");
+      res.status(502).json({ error: "Nu am putut valida easybox-ul selectat. Încearcă din nou." });
+      return;
+    }
+  }
+
   // Fetch cart items
   const cartItems = await db
     .select({ cartItem: cartItemsTable, product: productsTable })
@@ -336,6 +364,9 @@ router.post("/orders", async (req, res): Promise<void> => {
         .insert(ordersTable)
         .values({
           ...orderData,
+          samedayOohId: selectedOoh?.oohId ?? null,
+          samedayOohName: selectedOoh?.name ?? null,
+          samedayOohAddress: selectedOoh ? `${selectedOoh.address}, ${selectedOoh.city}, ${selectedOoh.county}` : null,
           sessionId,
           total: String(Math.round(total * 100) / 100),
           netopiaOrderId,
@@ -459,6 +490,67 @@ router.get("/orders/:id", async (req, res): Promise<void> => {
   }
 
   res.json(await buildOrderResponse(order));
+});
+
+/** Create a Sameday AWB for a paid order. Repeated calls return the existing AWB. */
+router.post("/orders/:id/awb", async (req, res): Promise<void> => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) {
+    res.status(400).json({ error: "ID comandă invalid." });
+    return;
+  }
+
+  const [order] = await db.select().from(ordersTable).where(eq(ordersTable.id, id));
+  if (!order) {
+    res.status(404).json({ error: "Comanda nu a fost găsită." });
+    return;
+  }
+  if (order.samedayAwbNumber) {
+    res.json({
+      awbNumber: order.samedayAwbNumber,
+      awbCost: order.samedayAwbCost == null ? null : Number(order.samedayAwbCost),
+      pdfLink: order.samedayAwbPdfUrl,
+    });
+    return;
+  }
+  if (order.paymentStatus !== "paid") {
+    res.status(409).json({ error: "AWB-ul poate fi creat doar după confirmarea plății." });
+    return;
+  }
+
+  const packageWeight = Number(req.body?.packageWeight ?? process.env["SAMEDAY_DEFAULT_PACKAGE_WEIGHT"] ?? 1);
+  if (!Number.isFinite(packageWeight) || packageWeight <= 0 || packageWeight > 38) {
+    res.status(400).json({ error: "Greutatea coletului trebuie să fie între 0 și 38 kg." });
+    return;
+  }
+
+  try {
+    const awb = await createAwb({
+      orderId: order.id,
+      deliveryMethod: order.deliveryMethod === "easybox" ? "easybox" : "home",
+      oohId: order.samedayOohId,
+      customerName: order.customerName,
+      customerEmail: order.customerEmail,
+      customerPhone: order.customerPhone,
+      shippingAddress: order.shippingAddress,
+      city: order.city,
+      county: order.county,
+      postalCode: order.postalCode,
+      insuredValue: Number(order.total).toFixed(2),
+      packageWeight,
+    });
+    await db.update(ordersTable).set({
+      samedayAwbNumber: awb.awbNumber,
+      samedayAwbCost: awb.awbCost == null ? null : String(awb.awbCost),
+      samedayAwbPdfUrl: awb.pdfLink,
+      samedayAwbCreatedAt: new Date(),
+      status: "shipped",
+    }).where(and(eq(ordersTable.id, order.id), sql`${ordersTable.samedayAwbNumber} is null`));
+    res.status(201).json(awb);
+  } catch (error) {
+    logger.error({ err: error, orderId: order.id }, "Failed to create Sameday AWB");
+    res.status(502).json({ error: error instanceof Error ? error.message : "AWB-ul nu a putut fi creat." });
+  }
 });
 
 /**

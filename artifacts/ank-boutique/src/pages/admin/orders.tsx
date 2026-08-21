@@ -4,7 +4,9 @@ import {
   useListOrders,
   getListOrdersQueryKey,
   useUpdateOrderStatus,
+  useCreateSamedayAwb,
 } from "@workspace/api-client-react";
+import { useToast } from "@/hooks/use-toast";
 import { AdminLayout } from "./layout";
 import { StatusBadge } from "./dashboard";
 import { ChevronDown } from "lucide-react";
@@ -22,6 +24,7 @@ const STATUS_LABELS_RO: Record<string, string> = {
 
 export default function AdminOrders() {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
   const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -32,11 +35,29 @@ export default function AdminOrders() {
   );
 
   const updateStatus = useUpdateOrderStatus();
+  const createAwb = useCreateSamedayAwb();
 
   const handleStatus = (id: number, newStatus: string) => {
     updateStatus.mutate(
       { id, data: { status: newStatus } },
       { onSuccess: () => queryClient.invalidateQueries({ queryKey: getListOrdersQueryKey() }) }
+    );
+  };
+
+  const handleCreateAwb = (id: number) => {
+    createAwb.mutate(
+      { id },
+      {
+        onSuccess: (awb) => {
+          queryClient.invalidateQueries({ queryKey: getListOrdersQueryKey() });
+          toast({ title: `AWB ${awb.awbNumber} creat`, description: "Expedierea Sameday este pregătită." });
+        },
+        onError: (error: any) => toast({
+          variant: "destructive",
+          title: "AWB-ul nu a putut fi creat",
+          description: error?.message || "Verifică plata și configurarea Sameday.",
+        }),
+      },
     );
   };
 
@@ -117,6 +138,33 @@ export default function AdminOrders() {
                             <p className="text-sm">{order.shippingAddress}</p>
                             <p className="text-sm">{order.city}, {order.county} {order.postalCode}</p>
                             <p className="text-sm text-muted-foreground mt-1">{order.customerPhone}</p>
+                            <p className="text-xs uppercase tracking-wider text-muted-foreground mt-3">
+                              {order.deliveryMethod === "easybox" ? "Sameday easybox" : "Sameday la adresă"}
+                            </p>
+                            {order.samedayOohName && (
+                              <p className="text-sm mt-1">{order.samedayOohName}<br />{order.samedayOohAddress}</p>
+                            )}
+                            <div className="mt-4">
+                              {order.samedayAwbNumber ? (
+                                <div className="text-sm">
+                                  <span className="font-medium">AWB: {order.samedayAwbNumber}</span>
+                                  {order.samedayAwbPdfUrl && (
+                                    <a href={order.samedayAwbPdfUrl} target="_blank" rel="noreferrer" className="ml-3 underline underline-offset-4">
+                                      Descarcă eticheta
+                                    </a>
+                                  )}
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  disabled={order.paymentStatus !== "paid" || createAwb.isPending}
+                                  onClick={() => handleCreateAwb(order.id)}
+                                  className="border border-foreground px-4 py-2 text-xs uppercase tracking-wider disabled:opacity-40"
+                                >
+                                  {createAwb.isPending ? "Se creează..." : "Creează AWB Sameday"}
+                                </button>
+                              )}
+                            </div>
                           </div>
                           <div>
                             <h3 className="text-xs uppercase tracking-widest font-medium text-muted-foreground mb-3">Articole Comandă</h3>
