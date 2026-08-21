@@ -3,17 +3,27 @@
   "version": "0.0.0",
   "license": "MIT",
   "packageManager": "pnpm@11.10.0",
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "preinstall": "node -e \"try { require('fs').unlinkSync('package-lock.json') } catch(e){} try { require('fs').unlinkSync('yarn.lock') } catch(e){}\"",
     "start": "pnpm --filter @workspace/scripts start",
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
+    "lint": "eslint . --max-warnings 0",
+    "test": "pnpm -r --filter @workspace/api-server --filter @workspace/ank-boutique run test",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
   },
   "private": true,
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "esbuild": "0.27.3",
+    "eslint": "^10.8.1",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.11.0",
     "prettier": "^3.8.3",
-    "typescript": "~5.9.3"
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.67.0"
   }
 }

@@ -73,7 +73,7 @@ export function Navbar() {
     closeSearch();
     setMenuOpen(false);
     setUserMenuOpen(false);
-  }, [location]);
+  }, [location, closeSearch]);
 
   const navLinks = [
     { href: "/shop", label: "Magazin" },

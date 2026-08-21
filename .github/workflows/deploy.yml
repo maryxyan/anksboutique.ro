@@ -1,4 +1,4 @@
-name: Build, Verify & Deploy to Railway
+name: Build, Verify & Deploy Production
 
 on:
   push:
@@ -18,25 +18,31 @@ permissions:
 
 jobs:
   verify:
-    name: Verify Railway build
+    name: Verify production builds
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Set up pnpm
-        uses: pnpm/action-setup@v4
+        uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
 
       - name: Set up Node.js 22
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
           node-version: 22
           cache: pnpm
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Lint workspace
+        run: pnpm run lint
+
+      - name: Run automated tests
+        run: pnpm run test
 
       # The API's project references resolve through declaration files emitted by
       # these composite library projects. Build them before running `--noEmit` on
@@ -58,12 +64,29 @@ jobs:
           BASE_PATH: /
         run: pnpm --filter @workspace/ank-boutique build
 
-      - name: Install Railway CLI
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        run: npm install --global @railway/cli
+      - name: Store verified frontend build
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: frontend-dist
+          path: artifacts/ank-boutique/dist
+          if-no-files-found: error
+          retention-days: 1
 
-      - name: Deploy frontend to Railway
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+  deploy-api:
+    name: Deploy API to Railway
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Install Railway CLI
+        run: npm install --global @railway/cli@5.41.2
+
+      - name: Deploy API
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
           RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
@@ -77,4 +100,99 @@ jobs:
           railway up \
             --ci \
             --service "$RAILWAY_SERVICE_ID" \
-            --message "GitHub Actions deploy ${GITHUB_SHA}"
+            --message "GitHub Actions API deploy ${GITHUB_SHA}"
+
+      - name: Verify deployed API health
+        env:
+          API_HEALTH_URL: https://workspaceapi-server-production-17e0.up.railway.app/api/healthz
+        run: |
+          curl \
+            --fail \
+            --show-error \
+            --silent \
+            --retry 10 \
+            --retry-delay 6 \
+            --retry-all-errors \
+            --max-time 10 \
+            "$API_HEALTH_URL"
+
+  deploy-frontend:
+    name: Deploy frontend via FTP
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: deploy-api
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Download verified frontend build
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
+        with:
+          name: frontend-dist
+          path: frontend-dist
+
+      - name: Prepare frontend deployment bundle
+        run: |
+          mkdir deploy
+          cp -R public_html/. deploy/
+          rm -rf deploy/assets
+          rm -f deploy/index.html
+          cp -R frontend-dist/assets deploy/assets
+          cp frontend-dist/index.html deploy/index.html
+
+      - name: Check FTP configuration
+        env:
+          FTP_SERVER: ${{ secrets.FTP_SERVER }}
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+        run: |
+          if [ -z "$FTP_SERVER" ] || [ -z "$FTP_USERNAME" ] || [ -z "$FTP_PASSWORD" ]; then
+            echo "Missing one or more required FTP repository secrets."
+            echo "Required: FTP_SERVER, FTP_USERNAME, FTP_PASSWORD"
+            exit 1
+          fi
+
+      - name: Deploy frontend
+        uses: SamKirkland/FTP-Deploy-Action@8e83cea8672e3fbcbb9fdafff34debf6ae4c5f65 # v4.3.5
+        with:
+          server: ${{ secrets.FTP_SERVER }}
+          username: ${{ secrets.FTP_USERNAME }}
+          password: ${{ secrets.FTP_PASSWORD }}
+          local-dir: deploy/
+          server-dir: public_html/
+          exclude: |
+            **/.git*
+            **/.git*/**
+            **/uploads/**
+            **/*.log
+            **/error_log
+
+      - name: Verify deployed storefront
+        env:
+          STOREFRONT_URL: https://anksboutique.ro
+        run: |
+          expected_asset="$(grep -oE 'src="/assets/index-[^"]+\.js"' frontend-dist/index.html | head -n 1 | cut -d '"' -f 2)"
+
+          if [ -z "$expected_asset" ]; then
+            echo "Could not identify the frontend entry asset in the verified build."
+            exit 1
+          fi
+
+          for attempt in {1..10}; do
+            if curl --fail --show-error --silent --location --max-time 15 \
+              "$STOREFRONT_URL/" --output "$RUNNER_TEMP/storefront.html" \
+              && grep --fixed-strings --quiet "$expected_asset" "$RUNNER_TEMP/storefront.html"; then
+              curl --fail --show-error --silent --location --max-time 15 \
+                "$STOREFRONT_URL$expected_asset" --output /dev/null
+              echo "Storefront is serving the verified frontend build."
+              exit 0
+            fi
+
+            echo "Attempt $attempt: verified frontend build is not live yet."
+            sleep 6
+          done
+
+          echo "Storefront did not serve the verified frontend build in time."
+          exit 1

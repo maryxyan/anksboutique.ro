@@ -1,19 +1,19 @@
 # Deployment
 
-Production is deployed through Railway. The former Romarg FTP/Node deployment is retired and must not be restarted.
+The production API is deployed through Railway. The former Romarg Node/API deployment is retired and must not be restarted. The static frontend is still deployed to the web host over FTP.
 
-The `Build, Verify & Deploy to Railway` GitHub Actions workflow validates every push to `main` and deploys the configured Railway service with the Railway CLI. It requires a production-environment project token in the GitHub secret `RAILWAY_TOKEN` and the target service ID in `RAILWAY_SERVICE_ID`. The project token itself determines the Railway project and environment.
+The `Build, Verify & Deploy Production` GitHub Actions workflow validates pull requests and pushes to `main`. After a successful `main` build, it deploys the API with the Railway CLI, verifies API health, and then uploads the verified frontend build to the web host over FTP. Finally, it confirms that `https://anksboutique.ro` serves the entry asset from that exact verified build. Railway deployment requires a production-environment project token in `RAILWAY_TOKEN` and the API service ID in `RAILWAY_SERVICE_ID`. `RAILWAY_PROJECT_ID` may remain configured for other tooling, but the current workflow does not read it. Frontend deployment requires `FTP_SERVER`, `FTP_USERNAME`, and `FTP_PASSWORD`.
 
 ## Railway services
 
-Configure separate API and frontend services from this repository, or equivalent Railway build targets.
+The existing Railway service hosts the API. The frontend remains on the FTP web host under `public_html/`. Its deployment bundle combines the new Vite `assets` and `index.html` with the tracked hosting files in `public_html`; remote user uploads are excluded from synchronization.
 
 ### API
 
 - Build: `pnpm install --frozen-lockfile && pnpm --filter @workspace/api-server build`
 - Start: `pnpm --filter @workspace/api-server start`
-- Health check: `GET /api/health`
-- Required runtime: Node.js 22 and pnpm 11
+- Health check: `GET https://workspaceapi-server-production-17e0.up.railway.app/api/healthz`
+- Required runtime: Node.js 22.x and pnpm 11.10.0
 
 ### Frontend
 
@@ -50,7 +50,7 @@ The current application does not use server-side session middleware and does not
 1. Merge reviewed changes into `main`.
 2. Confirm the API typecheck and build pass locally.
 3. Apply database migrations before code that depends on them.
-4. Deploy the API and check its health endpoint and logs.
+4. Deploy the API. CI checks `/api/healthz` automatically; also inspect the Railway logs.
 5. Deploy the frontend.
 6. Place a controlled payment and verify the NETOPIA callback changes the order from `pending` to the expected terminal state exactly once.
 7. Verify the return page and customer/admin notifications.
@@ -59,15 +59,15 @@ The current application does not use server-side session middleware and does not
 
 The repository history previously contained NETOPIA credential material. Rotate the NETOPIA API key and key pair in the merchant portal, replace Railway values, and revoke the old credentials. Rotate the database password if it was reused, shared, logged, or exposed, then update `DATABASE_URL` atomically.
 
-## Retiring Romarg
+## Retired Romarg API deployment
 
 In the Romarg control panel or shell:
 
 1. Stop and disable the old Node.js application/process.
 2. Confirm no process manager or cron job restarts it.
-3. Set Romarg's `API_PROXY_URL` to the public Railway API URL if the static frontend remains on Romarg.
+3. Set Romarg's `API_PROXY_URL` to the public Railway API URL while the static frontend remains on Romarg.
 4. Remove the old `temp_repo` deployment directory after verifying the active site no longer serves from it.
-5. Remove obsolete FTP deployment credentials and GitHub repository secrets.
+5. Remove only obsolete API deployment and restart credentials. Keep the frontend `FTP_SERVER`, `FTP_USERNAME`, and `FTP_PASSWORD` secrets while FTP hosts the storefront.
 6. Keep a recoverable backup until the Railway deployment has been verified.
 
-The repository no longer contains the former FTP workflow, remote restart endpoint, or Romarg restart/health scripts.
+The workflow no longer uploads or restarts the API over FTP. FTP is limited to the static frontend deployment bundle.
