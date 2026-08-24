@@ -11,7 +11,7 @@
 
 ## Deploy and verify
 
-- [ ] Deploy the API, then verify `/api/health` and inspect Railway logs.
+- [ ] Deploy the API, then verify `/api/readyz` and inspect Railway logs.
 - [ ] Deploy the frontend; verify the homepage, product, cart, checkout, sitemap, and `robots.txt`.
 - [ ] Complete one controlled payment and confirm its callback updates the order exactly once.
 - [ ] Run mobile/desktop Lighthouse and check external uptime monitors.

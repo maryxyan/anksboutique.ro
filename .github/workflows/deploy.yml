@@ -10,8 +10,8 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: railway-${{ github.ref }}
-  cancel-in-progress: true
+  group: production-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
   contents: read
@@ -21,6 +21,20 @@ jobs:
     name: Verify production builds
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: anks_ci
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d anks_ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
 
     steps:
       - name: Checkout repository
@@ -43,6 +57,21 @@ jobs:
 
       - name: Run automated tests
         run: pnpm run test
+
+      - name: Validate migration history
+        run: pnpm run db:migration:check
+
+      - name: Check for uncommitted schema migrations
+        run: |
+          pnpm run db:migration:generate
+          git diff --exit-code -- lib/db/drizzle
+
+      - name: Apply migrations to clean CI database
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@127.0.0.1:5432/anks_ci
+        run: |
+          pnpm run db:migration:apply
+          pnpm run db:migration:apply
 
       # The API's project references resolve through declaration files emitted by
       # these composite library projects. Build them before running `--noEmit` on
@@ -67,17 +96,96 @@ jobs:
       - name: Store verified frontend build
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
-          name: frontend-dist
+          name: frontend-dist-${{ github.sha }}
           path: artifacts/ank-boutique/dist
           if-no-files-found: error
-          retention-days: 1
+          retention-days: 30
+
+      - name: Create release metadata
+        run: |
+          mkdir release-metadata
+          {
+            echo "commit_sha=${GITHUB_SHA}"
+            echo "ref=${GITHUB_REF}"
+            echo "run_id=${GITHUB_RUN_ID}"
+            echo "run_attempt=${GITHUB_RUN_ATTEMPT}"
+            echo "created_at=$(date --utc +%Y-%m-%dT%H:%M:%SZ)"
+          } > release-metadata/release.txt
+          find artifacts/ank-boutique/dist -type f -print0 \
+            | sort --zero-terminated \
+            | xargs --null sha256sum \
+            > release-metadata/frontend-sha256.txt
+
+      - name: Store release metadata
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: release-metadata-${{ github.sha }}
+          path: release-metadata
+          if-no-files-found: error
+          retention-days: 90
+
+  migrate-production:
+    name: Apply production database migrations
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment:
+      name: production
+      url: https://workspaceapi-server-production-17e0.up.railway.app
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@f40ffcd9367d9f12939873eb1018b921a783ffaa # v4
+
+      - name: Set up Node.js 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Railway CLI
+        run: npm install --global @railway/cli@5.41.2
+
+      - name: Check Railway configuration
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+        run: |
+          if [ -z "$RAILWAY_TOKEN" ] || [ -z "$RAILWAY_PROJECT_ID" ] || [ -z "$RAILWAY_SERVICE_ID" ]; then
+            echo "Missing one or more required Railway repository secrets."
+            echo "Required: RAILWAY_TOKEN, RAILWAY_PROJECT_ID, RAILWAY_SERVICE_ID"
+            exit 1
+          fi
+
+      - name: Apply migrations using Railway database variables
+        env:
+          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
+          RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
+        run: |
+          railway run \
+            --project "$RAILWAY_PROJECT_ID" \
+            --service "$RAILWAY_SERVICE_ID" \
+            --no-local \
+            -- pnpm run db:migration:apply
 
   deploy-api:
     name: Deploy API to Railway
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-    needs: verify
+    needs: migrate-production
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    environment:
+      name: production
+      url: https://workspaceapi-server-production-17e0.up.railway.app
 
     steps:
       - name: Checkout repository
@@ -104,7 +212,7 @@ jobs:
 
       - name: Verify deployed API health
         env:
-          API_HEALTH_URL: https://workspaceapi-server-production-17e0.up.railway.app/api/healthz
+          API_HEALTH_URL: https://workspaceapi-server-production-17e0.up.railway.app/api/readyz
         run: |
           curl \
             --fail \
@@ -122,6 +230,9 @@ jobs:
     needs: deploy-api
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    environment:
+      name: production
+      url: https://anksboutique.ro
 
     steps:
       - name: Checkout repository
@@ -130,7 +241,7 @@ jobs:
       - name: Download verified frontend build
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4
         with:
-          name: frontend-dist
+          name: frontend-dist-${{ github.sha }}
           path: frontend-dist
 
       - name: Prepare frontend deployment bundle
