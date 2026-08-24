@@ -2,7 +2,7 @@
 
 The production API is deployed through Railway. The former Romarg Node/API deployment is retired and must not be restarted. The static frontend is still deployed to the web host over FTP.
 
-The `Build, Verify & Deploy Production` GitHub Actions workflow validates pull requests and pushes to `main`. After a successful `main` build, it deploys the API with the Railway CLI, verifies API health, and then uploads the verified frontend build to the web host over FTP. Finally, it confirms that `https://anksboutique.ro` serves the entry asset from that exact verified build. Railway deployment requires a production-environment project token in `RAILWAY_TOKEN` and the API service ID in `RAILWAY_SERVICE_ID`. `RAILWAY_PROJECT_ID` may remain configured for other tooling, but the current workflow does not read it. Frontend deployment requires `FTP_SERVER`, `FTP_USERNAME`, and `FTP_PASSWORD`.
+The `Build, Verify & Deploy Production` GitHub Actions workflow validates pull requests and pushes to `main`. After a successful `main` build, it applies versioned database migrations, deploys the API with the Railway CLI, verifies API health, and then uploads the verified frontend build to the web host over FTP. Finally, it confirms that `https://anksboutique.ro` serves the entry asset from that exact verified build. Railway migration and deployment require `RAILWAY_TOKEN`, `RAILWAY_PROJECT_ID`, and the API service ID in `RAILWAY_SERVICE_ID`. Frontend deployment requires `FTP_SERVER`, `FTP_USERNAME`, and `FTP_PASSWORD`.
 
 ## Railway services
 
@@ -12,7 +12,8 @@ The existing Railway service hosts the API. The frontend remains on the FTP web 
 
 - Build: `pnpm install --frozen-lockfile && pnpm --filter @workspace/api-server build`
 - Start: `pnpm --filter @workspace/api-server start`
-- Health check: `GET https://workspaceapi-server-production-17e0.up.railway.app/api/healthz`
+- Liveness: `GET https://workspaceapi-server-production-17e0.up.railway.app/api/healthz`
+- Readiness: `GET https://workspaceapi-server-production-17e0.up.railway.app/api/readyz` (includes a database query)
 - Required runtime: Node.js 22.x and pnpm 11.10.0
 
 ### Frontend
@@ -49,11 +50,24 @@ The current application does not use server-side session middleware and does not
 
 1. Merge reviewed changes into `main`.
 2. Confirm the API typecheck and build pass locally.
-3. Apply database migrations before code that depends on them.
+3. Confirm the latest Neon backup or recovery branch is usable. CI applies validated versioned migrations before deploying code that depends on them; see `docs/DATABASE_MIGRATIONS.md`.
 4. Deploy the API. CI checks `/api/healthz` automatically; also inspect the Railway logs.
 5. Deploy the frontend.
 6. Place a controlled payment and verify the NETOPIA callback changes the order from `pending` to the expected terminal state exactly once.
 7. Verify the return page and customer/admin notifications.
+
+## GitHub production environment
+
+All migration and deployment jobs target the GitHub environment named `production`. In repository **Settings → Environments → production**:
+
+1. Add the required reviewers who may approve production releases.
+2. Enable prevention of self-review when organizational policy requires separation of duties.
+3. Restrict deployment branches to `main`.
+4. Keep Railway and FTP credentials as environment secrets if they should only be available to approved production jobs.
+
+The workflow does not cancel an active run when a newer commit arrives. Later production runs queue behind the current run.
+
+Verified frontend builds are retained for 30 days and release metadata/checksums for 90 days. See `docs/ROLLBACK.md` for Railway and FTP recovery and `docs/MONITORING.md` for endpoint monitoring and alerts.
 
 ## Credential rotation
 

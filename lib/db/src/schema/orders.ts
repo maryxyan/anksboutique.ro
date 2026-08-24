@@ -1,37 +1,54 @@
-import { pgTable, serial, text, numeric, integer, timestamp } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
+import {
+  pgTable,
+  serial,
+  text,
+  numeric,
+  integer,
+  timestamp,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod/v4";
 
-export const ordersTable = pgTable("orders", {
-  id: serial("id").primaryKey(),
-  customerName: text("customer_name").notNull(),
-  customerEmail: text("customer_email").notNull(),
-  customerPhone: text("customer_phone").notNull(),
-  shippingAddress: text("shipping_address"),
-  city: text("city"),
-  county: text("county"),
-  postalCode: text("postal_code"),
-  deliveryMethod: text("delivery_method").notNull().default("home"),
-  samedayOohId: integer("sameday_ooh_id"),
-  samedayOohName: text("sameday_ooh_name"),
-  samedayOohAddress: text("sameday_ooh_address"),
-  samedayAwbNumber: text("sameday_awb_number"),
-  samedayAwbCost: numeric("sameday_awb_cost", { precision: 10, scale: 2 }),
-  samedayAwbPdfUrl: text("sameday_awb_pdf_url"),
-  samedayAwbCreatedAt: timestamp("sameday_awb_created_at"),
-  notes: text("notes"),
-  total: numeric("total", { precision: 10, scale: 2 }).notNull(),
-  status: text("status").notNull().default("pending"),
-  paymentStatus: text("payment_status").notNull().default("pending"),
-  paymentMethod: text("payment_method"),
-  netopiaOrderId: text("netopia_order_id"),
-  sessionId: text("session_id"),
-  confirmationEmailSentAt: timestamp("confirmation_email_sent_at"),
-  adminNotificationSentAt: timestamp("admin_notification_sent_at"),
-  failedPaymentEmailSentAt: timestamp("failed_payment_email_sent_at"),
-  cancelledPaymentEmailSentAt: timestamp("cancelled_payment_email_sent_at"),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+export const ordersTable = pgTable(
+  "orders",
+  {
+    id: serial("id").primaryKey(),
+    customerName: text("customer_name").notNull(),
+    customerEmail: text("customer_email").notNull(),
+    customerPhone: text("customer_phone").notNull(),
+    shippingAddress: text("shipping_address"),
+    city: text("city"),
+    county: text("county"),
+    postalCode: text("postal_code"),
+    deliveryMethod: text("delivery_method").notNull().default("home"),
+    samedayOohId: integer("sameday_ooh_id"),
+    samedayOohName: text("sameday_ooh_name"),
+    samedayOohAddress: text("sameday_ooh_address"),
+    samedayAwbNumber: text("sameday_awb_number"),
+    samedayAwbCost: numeric("sameday_awb_cost", { precision: 10, scale: 2 }),
+    samedayAwbPdfUrl: text("sameday_awb_pdf_url"),
+    samedayAwbCreatedAt: timestamp("sameday_awb_created_at"),
+    notes: text("notes"),
+    total: numeric("total", { precision: 10, scale: 2 }).notNull(),
+    status: text("status").notNull().default("pending"),
+    paymentStatus: text("payment_status").notNull().default("pending"),
+    paymentMethod: text("payment_method"),
+    netopiaOrderId: text("netopia_order_id"),
+    sessionId: text("session_id"),
+    confirmationEmailSentAt: timestamp("confirmation_email_sent_at"),
+    adminNotificationSentAt: timestamp("admin_notification_sent_at"),
+    failedPaymentEmailSentAt: timestamp("failed_payment_email_sent_at"),
+    cancelledPaymentEmailSentAt: timestamp("cancelled_payment_email_sent_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => [
+    uniqueIndex("orders_sameday_awb_number_unique")
+      .on(table.samedayAwbNumber)
+      .where(sql`${table.samedayAwbNumber} is not null`),
+  ],
+);
 
 export const orderItemsTable = pgTable("order_items", {
   id: serial("id").primaryKey(),
@@ -44,8 +61,13 @@ export const orderItemsTable = pgTable("order_items", {
   size: text("size"),
 });
 
-export const insertOrderSchema = createInsertSchema(ordersTable).omit({ id: true, createdAt: true });
-export const insertOrderItemSchema = createInsertSchema(orderItemsTable).omit({ id: true });
+export const insertOrderSchema = createInsertSchema(ordersTable).omit({
+  id: true,
+  createdAt: true,
+});
+export const insertOrderItemSchema = createInsertSchema(orderItemsTable).omit({
+  id: true,
+});
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
 export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
 export type Order = typeof ordersTable.$inferSelect;

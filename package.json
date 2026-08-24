@@ -12,6 +12,9 @@
     "build": "pnpm run typecheck && pnpm -r --if-present run build",
     "lint": "eslint . --max-warnings 0",
     "test": "pnpm -r --filter @workspace/api-server --filter @workspace/ank-boutique run test",
+    "db:migration:generate": "pnpm --filter @workspace/db migration:generate",
+    "db:migration:check": "pnpm --filter @workspace/db migration:check",
+    "db:migration:apply": "pnpm --filter @workspace/db migration:apply",
     "typecheck:libs": "tsc --build",
     "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck"
   },

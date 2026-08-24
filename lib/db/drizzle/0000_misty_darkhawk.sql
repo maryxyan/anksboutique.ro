@@ -1,4 +1,4 @@
-CREATE TABLE "categories" (
+CREATE TABLE IF NOT EXISTS "categories" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"slug" text NOT NULL,
@@ -8,7 +8,7 @@ CREATE TABLE "categories" (
 	CONSTRAINT "categories_slug_unique" UNIQUE("slug")
 );
 --> statement-breakpoint
-CREATE TABLE "products" (
+CREATE TABLE IF NOT EXISTS "products" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"title" text NOT NULL,
 	"description" text,
@@ -26,7 +26,7 @@ CREATE TABLE "products" (
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "cart_items" (
+CREATE TABLE IF NOT EXISTS "cart_items" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"session_id" text NOT NULL,
 	"product_id" integer NOT NULL,
@@ -37,7 +37,7 @@ CREATE TABLE "cart_items" (
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "order_items" (
+CREATE TABLE IF NOT EXISTS "order_items" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"order_id" integer NOT NULL,
 	"product_id" integer NOT NULL,
@@ -48,7 +48,7 @@ CREATE TABLE "order_items" (
 	"size" text
 );
 --> statement-breakpoint
-CREATE TABLE "orders" (
+CREATE TABLE IF NOT EXISTS "orders" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"customer_name" text NOT NULL,
 	"customer_email" text NOT NULL,
@@ -67,14 +67,14 @@ CREATE TABLE "orders" (
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "wishlist_items" (
+CREATE TABLE IF NOT EXISTS "wishlist_items" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"session_id" text NOT NULL,
 	"product_id" integer NOT NULL,
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "reviews" (
+CREATE TABLE IF NOT EXISTS "reviews" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"product_id" integer NOT NULL,
 	"reviewer_name" text NOT NULL,
@@ -85,7 +85,7 @@ CREATE TABLE "reviews" (
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "newsletter_subscriptions" (
+CREATE TABLE IF NOT EXISTS "newsletter_subscriptions" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"email" text NOT NULL,
 	"name" text,
@@ -93,7 +93,7 @@ CREATE TABLE "newsletter_subscriptions" (
 	CONSTRAINT "newsletter_subscriptions_email_unique" UNIQUE("email")
 );
 --> statement-breakpoint
-CREATE TABLE "returns" (
+CREATE TABLE IF NOT EXISTS "returns" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"customer_name" text NOT NULL,
 	"customer_email" text NOT NULL,
@@ -112,7 +112,7 @@ CREATE TABLE "returns" (
 	"created_at" timestamp DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE TABLE "labels" (
+CREATE TABLE IF NOT EXISTS "labels" (
 	"id" serial PRIMARY KEY NOT NULL,
 	"name" text NOT NULL,
 	"slug" text NOT NULL,
