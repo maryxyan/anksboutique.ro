@@ -168,15 +168,13 @@ jobs:
       - name: Apply migrations using Railway database variables
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
           RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
         run: |
-          railway link \
-            --project "$RAILWAY_PROJECT_ID" \
+          railway run \
             --environment production \
             --service "$RAILWAY_SERVICE_ID" \
-            --json
-          railway run --no-local -- sh -c \
+            --no-local \
+            -- sh -c \
             'test -n "$DATABASE_URL" || { echo "DATABASE_URL is missing from the linked Railway API service." >&2; exit 1; }; exec pnpm run db:migration:apply'
 
   deploy-api:
