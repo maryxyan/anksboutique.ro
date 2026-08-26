@@ -173,6 +173,7 @@ jobs:
         run: |
           railway run \
             --project "$RAILWAY_PROJECT_ID" \
+            --environment production \
             --service "$RAILWAY_SERVICE_ID" \
             --no-local \
             -- pnpm run db:migration:apply
