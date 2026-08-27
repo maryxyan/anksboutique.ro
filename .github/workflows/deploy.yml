@@ -168,9 +168,11 @@ jobs:
       - name: Apply migrations using Railway database variables
         env:
           RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+          RAILWAY_PROJECT_ID: ${{ secrets.RAILWAY_PROJECT_ID }}
           RAILWAY_SERVICE_ID: ${{ secrets.RAILWAY_SERVICE_ID }}
         run: |
           railway run \
+            --project "$RAILWAY_PROJECT_ID" \
             --environment production \
             --service "$RAILWAY_SERVICE_ID" \
             --no-local \
