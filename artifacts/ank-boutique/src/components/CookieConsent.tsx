@@ -1,34 +1,8 @@
 import { useState, useEffect } from "react";
-import { X, ChevronDown, ChevronUp, Shield } from "lucide-react";
+import { ChevronDown, ChevronUp, Shield } from "lucide-react";
 
-const STORAGE_KEY = "anks_cookie_consent";
-
-interface ConsentState {
-  necessary: true;
-  analytics: boolean;
-  marketing: boolean;
-  timestamp: number;
-}
-
-function loadConsent(): ConsentState | null {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    return JSON.parse(raw);
-  } catch {
-    return null;
-  }
-}
-
-function saveConsent(analytics: boolean, marketing: boolean) {
-  const state: ConsentState = {
-    necessary: true,
-    analytics,
-    marketing,
-    timestamp: Date.now(),
-  };
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-}
+import { loadConsent, saveConsent, applyConsent, SETTINGS_EVENT, STORAGE_KEY } from "@/lib/consent";
+export { useCookieConsent } from "@/lib/consent";
 
 interface CategoryRowProps {
   title: string;
@@ -50,6 +24,8 @@ function CategoryRow({ title, description, locked, checked, onChange }: Category
           <button
             type="button"
             aria-label={title}
+            role="switch"
+            aria-checked={checked}
             disabled={locked}
             onClick={(e) => {
               e.stopPropagation();
@@ -92,10 +68,32 @@ export default function CookieConsent() {
   const [marketing, setMarketing] = useState(false);
 
   useEffect(() => {
-    const consent = loadConsent();
-    if (!consent) {
+    const sync = () => {
+      const consent = loadConsent();
+      applyConsent(consent);
+      setAnalytics(consent?.analytics ?? false);
+      setMarketing(consent?.marketing ?? false);
+      setVisible(!consent);
+    };
+    const open = () => {
+      const consent = loadConsent();
+      setAnalytics(consent?.analytics ?? false);
+      setMarketing(consent?.marketing ?? false);
+      setShowSettings(true);
       setVisible(true);
-    }
+    };
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === STORAGE_KEY || event.key === null) sync();
+    };
+    sync();
+    window.addEventListener(SETTINGS_EVENT, open);
+    window.addEventListener("storage", onStorage);
+    window.addEventListener("focus", sync);
+    return () => {
+      window.removeEventListener(SETTINGS_EVENT, open);
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener("focus", sync);
+    };
   }, []);
 
   if (!visible) return null;
@@ -122,9 +120,9 @@ export default function CookieConsent() {
 
       <div
         role="dialog"
-        aria-modal="true"
+        aria-modal="false"
         aria-label="Consimțământ cookie-uri"
-        className="fixed bottom-0 left-0 right-0 z-[9999] md:bottom-6 md:left-6 md:right-auto md:max-w-md w-full"
+        className="fixed bottom-0 left-0 right-0 z-[9999] md:bottom-6 md:left-6 md:right-auto md:max-w-md w-full max-h-[90dvh] overflow-y-auto"
       >
         <div className="min-h-[414px] md:min-h-0 bg-background border border-border shadow-2xl">
           {/* Header */}
@@ -221,32 +219,12 @@ export default function CookieConsent() {
             )}
 
             <p className="text-xs text-muted-foreground text-center leading-relaxed">
-              Operator: Ank's Boutique · Poți retrage consimțământul oricând din{" "}
-              <button
-                onClick={() => {
-                  localStorage.removeItem(STORAGE_KEY);
-                  setVisible(true);
-                  setShowSettings(false);
-                  setAnalytics(false);
-                  setMarketing(false);
-                }}
-                className="underline underline-offset-1 hover:text-foreground transition-colors"
-              >
-                setări cookie
-              </button>
+              Preferințele sunt păstrate timp de 180 de zile. Le poți modifica oricând din „Setări cookie” din subsolul paginii.{" "}
+              <a href="/confidentialitate" className="underline underline-offset-1">Politica de confidențialitate</a>
             </p>
           </div>
         </div>
       </div>
     </>
   );
-}
-
-export function useCookieConsent() {
-  const consent = loadConsent();
-  return {
-    hasConsent: !!consent,
-    analytics: consent?.analytics ?? false,
-    marketing: consent?.marketing ?? false,
-  };
 }

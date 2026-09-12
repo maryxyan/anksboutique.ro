@@ -16,7 +16,7 @@ export default function PoliticaConfidentialitate() {
       <div className="container mx-auto px-4 py-16 max-w-3xl">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-serif mb-4">Politica de Confidențialitate</h1>
-          <p className="text-sm text-muted-foreground">Ultima actualizare: 25 iunie 2025</p>
+          <p className="text-sm text-muted-foreground">Ultima actualizare: 12 septembrie 2026</p>
         </div>
 
         <div className="prose-sm">
@@ -88,7 +88,7 @@ export default function PoliticaConfidentialitate() {
           </Section>
 
           <Section title="3. Cookie-uri">
-            <p>Utilizăm cookie-uri pentru funcționarea corectă a site-ului. Detalii complete în <strong className="text-foreground">Politica de cookie-uri</strong> afișată la prima vizită.</p>
+            <p>Utilizăm cookie-uri pentru funcționarea corectă a site-ului. Preferințele sunt păstrate în browser timp de 180 de zile. După expirare sau modificarea versiunii politicii, solicităm o nouă alegere.</p>
             <ul className="list-disc list-inside space-y-1 mt-2">
               <li><strong className="text-foreground">Cookie-uri necesare</strong> — active permanent; nu necesită consimțământ (sesiune, coș)</li>
               <li><strong className="text-foreground">Cookie-uri de analiză</strong> — active doar cu consimțământul tău explicit</li>
@@ -111,16 +111,16 @@ export default function PoliticaConfidentialitate() {
           <Section title="5. Cu cine împărțim datele">
             <p>Nu vindem datele tale. Le transmitem exclusiv partenerilor necesari pentru executarea comenzilor:</p>
             <ul className="list-disc list-inside space-y-1 mt-2">
-              <li><strong className="text-foreground">Fan Courier / DPD România</strong> — pentru livrarea coletelor (nume, adresă, telefon)</li>
+              <li><strong className="text-foreground">Sameday</strong> — pentru livrarea coletelor (nume, adresă, telefon)</li>
               <li><strong className="text-foreground">Netopia Payments</strong> — procesator de plăți (date tranzacție; noi NU stocăm datele cardului)</li>
-              <li><strong className="text-foreground">Furnizor hosting</strong> — Replit Inc. (SUA) cu garanții adecvate conform art. 46 GDPR</li>
+              <li><strong className="text-foreground">Furnizor hosting</strong> — Railway (API) și furnizorul de găzduire web (site)</li>
             </ul>
             <p>Toți partenerii sunt obligați contractual să protejeze datele tale conform GDPR.</p>
           </Section>
 
           <Section title="6. Transferuri internaționale">
             <p>
-              Infrastructura site-ului este găzduită de <strong className="text-foreground">Replit Inc.</strong> (SUA). Transferul este acoperit de Clauze Contractuale Standard (SCC) aprobate de Comisia Europeană, asigurând un nivel adecvat de protecție.
+              Serviciul API este găzduit prin Railway, iar site-ul este găzduit separat. Pentru informații despre locațiile de prelucrare și garanțiile aplicabile transferurilor internaționale, ne poți contacta la contact@anksboutique.ro.
             </p>
           </Section>
 
@@ -167,7 +167,7 @@ export default function PoliticaConfidentialitate() {
             <p>
               Ne rezervăm dreptul de a actualiza această politică ori de câte ori este necesar. Modificările semnificative vor fi comunicate prin email sau prin notificare pe site, cu cel puțin 30 de zile înainte de intrarea în vigoare.
             </p>
-            <p>Data ultimei revizuiri: <strong className="text-foreground">25 iunie 2025</strong>.</p>
+            <p>Data ultimei revizuiri: <strong className="text-foreground">12 septembrie 2026</strong>.</p>
           </Section>
 
           <div className="border border-border p-6 text-center mt-8">

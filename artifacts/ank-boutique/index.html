@@ -2,6 +2,17 @@
 <html lang="ro">
   <head>
     <meta charset="UTF-8" />
+    <!-- Keep consent defaults before any Google tag or tracking script. -->
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+      window.gtag('consent', 'default', {
+        analytics_storage: 'denied',
+        ad_storage: 'denied',
+        ad_user_data: 'denied',
+        ad_personalization: 'denied'
+      });
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Ank&#39;s Boutique</title>
     <meta name="description" content="Ank&#39;s Boutique — magazin online de haine și accesorii." />
